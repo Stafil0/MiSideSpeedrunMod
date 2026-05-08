@@ -73,7 +73,7 @@ public static class ChapterSelector
         _queuedMinigame = ChapterMinigame.None;
     }
 
-    internal static void Load(string scene)
+    internal static void Load(string scene, bool fullReload = false)
     {
         var chapter = ChapterResolver.ResolveChapter(scene);
         if (!chapter.IsPlayable())
@@ -82,10 +82,10 @@ public static class ChapterSelector
             return;
         }
 
-        QueueLoad(scene, chapter, ChapterMinigame.None);
+        QueueLoad(scene, chapter, ChapterMinigame.None, fullReload);
     }
 
-    internal static void Load(GameChapter chapter, ChapterMinigame minigame = ChapterMinigame.None)
+    internal static void Load(GameChapter chapter, ChapterMinigame minigame = ChapterMinigame.None, bool fullReload = false)
     {
         var scene = ChapterResolver.ResolveScene(chapter, minigame);
         if (string.IsNullOrEmpty(scene))
@@ -96,16 +96,16 @@ public static class ChapterSelector
 
         var resolvedMinigame = ChapterResolver.ResolveMinigame(chapter, minigame);
 
-        QueueLoad(scene, chapter, resolvedMinigame);
+        QueueLoad(scene, chapter, resolvedMinigame, fullReload);
     }
 
-    private static void QueueLoad(string scene, GameChapter chapter, ChapterMinigame minigame)
+    private static void QueueLoad(string scene, GameChapter chapter, ChapterMinigame minigame, bool fullReload)
     {
         var isFastReloadable = IsFastReloadable(chapter, minigame);
 
-        Plugin.Log.LogInfo($"ChapterSelector.QueueLoad: is fast reloadable={isFastReloadable}, scene={scene}, chapter={chapter}, minigame={minigame}");
+        Plugin.Log.LogInfo($"ChapterSelector.QueueLoad: is fast reloadable={isFastReloadable}, fullReload={fullReload}, scene={scene}, chapter={chapter}, minigame={minigame}");
 
-        if (isFastReloadable || !GameUtil.IsInGame())
+        if (!fullReload && (isFastReloadable || !GameUtil.IsInGame()))
         {
             Load(scene, chapter, minigame);
             return;

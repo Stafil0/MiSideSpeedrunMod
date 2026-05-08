@@ -43,7 +43,8 @@ internal static class ChapterSelectorMenu
                     .SetObjectName($"ChapterSelectorMenuOption_{selectedChapter}")
                     .SetName(selectedChapter.ToString())
                     .SetParent(page)
-                    .SetOnClick(() => ChapterSelector.Load(selectedChapter))
+                    .SetOnClick(() => ChapterSelector.Load(selectedChapter, fullReload: true))
+                    .CloseOnClick()
                     .SetOrder(-1)
                     .Build();
             }
