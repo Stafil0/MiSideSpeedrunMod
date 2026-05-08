@@ -1,3 +1,4 @@
+using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using Object = UnityEngine.Object;
@@ -6,9 +7,8 @@ namespace SpeedrunMod.Practice.Minigames;
 
 internal class ConnectTheDotsMinigame
 {
-    private static bool _loadQueued;
-    private static bool _doorOpenQueued;
-    private static int _gameStartQueued = -1;
+    private static readonly ActionQueue Queue = new();
+
     private static GameObject _lever1Clone;
     private static GameObject _lever2Clone;
     private static GameObject _lever1Object;
@@ -19,39 +19,20 @@ internal class ConnectTheDotsMinigame
 
     public static void QueueLoad()
     {
-        _loadQueued = true;
-        _gameStartQueued = -1;
+        Queue.Clear();
+        Queue.Enqueue(Load);
     }
 
     internal static void Update()
     {
-        if (_loadQueued)
-        {
-            _loadQueued = false;
-            Load();
-        }
-
-        if (_doorOpenQueued)
-        {
-            _doorOpenQueued = false;
-            DoorOpen();
-        }
-
-        if (_gameStartQueued >= 0)
-        {
-            if (_gameStartQueued == 0)
-            {
-                GameStart();
-            }
-            _gameStartQueued--;
-        }
+        Queue.Tick();
     }
 
     private static void Load()
     {
         PrepareScene();
         PrepareClones();
-        _doorOpenQueued = true;
+        Queue.Enqueue(DoorOpen);
     }
 
     private static void PrepareScene()
@@ -105,10 +86,10 @@ internal class ConnectTheDotsMinigame
 
         Time.timeScale = 10;
 
-        PlayNextGame();
+        PlayNextGame(delaySeconds: 5f);
     }
 
-    internal static void PlayNextGame()
+    internal static void PlayNextGame(float delaySeconds = 2f)
     {
         if (SwitchGames) PlayingGame = PlayingGame == 1 ? 2 : 1;
 
@@ -129,7 +110,8 @@ internal class ConnectTheDotsMinigame
         }
 
         Time.timeScale = 10;
-        _gameStartQueued = 60;
+        Queue.EnqueueWait(seconds: delaySeconds);
+        Queue.Enqueue(GameStart);
     }
 
     private static GameObject PlayGame(GameObject objectToDestroy, GameObject cloneToPrepare)
@@ -152,8 +134,9 @@ internal class ConnectTheDotsMinigame
         {
             gameLines = _lever2Object.transform.Find("GameLines 2/Interface Lines").gameObject;
         }
+
         Location11_GameLinesMain game = gameLines.GetComponent<Location11_GameLinesMain>();
-        game.eventStopLevel.AddListener((UnityAction)PlayNextGame);
+        game.eventStopLevel.AddListener((UnityAction)(() => PlayNextGame(delaySeconds: 1f)));
         game.StartGame();
     }
 }

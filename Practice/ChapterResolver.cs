@@ -23,7 +23,8 @@ internal static class ChapterResolver
                 GameChapter.TheLoop => "Scene 8 - ReRooms",
                 GameChapter.ChibiMita => "Scene 10 - ManekenWorld",
                 // PracticeChapters.DummiesAndForgottenPuzzles => "Scene 10 - ManekenWorld",
-                GameChapter.Ghostly => "Scene 11 - Backrooms",
+                GameChapter.DummiesAndForgottenPuzzles => "Scene 11 - Backrooms",
+                // GameChapter.Ghostly => "Scene 11 - Backrooms",
                 GameChapter.SheJustWantsToSleep => "Scene 17 - Dreamer",
                 // PracticeChapters.Novels => "Scene 19 - Glasses",
                 GameChapter.ReadingBooks => "Scene 19 - Glasses",
@@ -69,7 +70,7 @@ internal static class ChapterResolver
             "Scene 7 - Backrooms" => GameChapter.BeyondTheWorld,
             "Scene 8 - ReRooms" => GameChapter.TheLoop,
             "Scene 10 - ManekenWorld" => GameChapter.ChibiMita,
-            "Scene 11 - Backrooms" => GameChapter.Ghostly,
+            "Scene 11 - Backrooms" => GameChapter.DummiesAndForgottenPuzzles,
             "Scene 17 - Dreamer" => GameChapter.SheJustWantsToSleep,
             "Scene 19 - Glasses" => GameChapter.ReadingBooks,
             "Scene 20 - FightMita" => GameChapter.RunAndHide,
@@ -116,7 +117,7 @@ internal static class ChapterResolver
             }
         }
 
-        if (chapter == GameChapter.Ghostly)
+        if (chapter == GameChapter.DummiesAndForgottenPuzzles)
         {
             switch (minigame)
             {

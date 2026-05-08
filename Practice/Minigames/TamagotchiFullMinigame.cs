@@ -56,7 +56,7 @@ public static class TamagotchiFullMinigame
         // The phone grab animation has to finish before we can continue, I don't know why
         Time.timeScale = 10f;
 
-        Queue.EnqueueWait(seconds: 0.015f);
+        Queue.EnqueueWait(seconds: 0.1f);
         Queue.Enqueue(MobileButtonInteractiveClick);
     }
 
@@ -77,7 +77,7 @@ public static class TamagotchiFullMinigame
         var playButton = _smartPhone.transform.Find("3D HintKey Play").gameObject;
         playButton.active = true;
 
-        Queue.EnqueueWait(seconds: 0.05f);
+        Queue.EnqueueWait(seconds: 0.1f);
         Queue.Enqueue(ButtonClick);
     }
 

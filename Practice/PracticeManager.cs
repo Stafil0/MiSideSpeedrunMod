@@ -55,7 +55,7 @@ public static class PracticeManager
             case GameChapter.ChibiMita when minigame == ChapterMinigame.MakeMannequin:
                 MannequinMinigame.QueueLoad();
                 break;
-            case GameChapter.Ghostly when minigame == ChapterMinigame.ConnectTheDots:
+            case GameChapter.DummiesAndForgottenPuzzles when minigame == ChapterMinigame.ConnectTheDots:
                 ConnectTheDotsMinigame.QueueLoad();
                 break;
             case GameChapter.ReadingBooks when minigame == ChapterMinigame.MilaMinigames:
