@@ -132,9 +132,9 @@ internal static class FastResetToggle
             {
                 var previousChapter = ChapterResolver.ResolvePreviousChapter(ChapterSelector.CurrentChapter);
                 return previousChapter.IsPlayable()
-                    ? $"{prefix}: load previous chapter '{previousChapter}'"
+                    ? $"{prefix}: load previous chapter '{previousChapter.ToDisplayName()}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{previousChapter}' is not valid";
+                    : $"{prefix}: chapter '{previousChapter.ToDisplayName()}' is not valid";
 #else
                     : string.Empty;
 #endif
@@ -143,9 +143,9 @@ internal static class FastResetToggle
             {
                 var nextChapter = ChapterResolver.ResolveNextChapter(ChapterSelector.CurrentChapter);
                 return nextChapter.IsPlayable()
-                    ? $"{prefix}: load next chapter '{nextChapter}'"
+                    ? $"{prefix}: load next chapter '{nextChapter.ToDisplayName()}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{nextChapter}' is not valid";
+                    : $"{prefix}: chapter '{nextChapter.ToDisplayName()}' is not valid";
 #else
                     : string.Empty;
 #endif
@@ -155,9 +155,9 @@ internal static class FastResetToggle
             case FastResetAction.RestartChapter:
             default:
                 return ChapterSelector.CurrentChapter.IsPlayable()
-                    ? $"{prefix}: restart chapter '{ChapterSelector.CurrentChapter}'"
+                    ? $"{prefix}: restart chapter '{ChapterSelector.CurrentChapter.ToDisplayName()}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{ChapterSelector.CurrentChapter}' is not valid";
+                    : $"{prefix}: chapter '{ChapterSelector.CurrentChapter.ToDisplayName()}' is not valid";
 #else
                     : string.Empty;
 #endif

@@ -51,7 +51,7 @@ public static class ChapterSelector
 
     internal static void NewGame()
     {
-        Load(GameChapter.StartOfGame);
+        Load(GameChapter.StartOfTheGame);
     }
 
     internal static void RestartChapter()
@@ -132,13 +132,13 @@ public static class ChapterSelector
     {
         return (chapter, minigame) switch
         {
-            (GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull) => true,
-            (GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting) => true,
+            (GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiFull) => true,
+            (GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiCutting) => true,
             (GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots) => true,
             (GameChapter.ReadingBooks, _) => true,
 #if DEBUG
             // TODO: still need to check other chapters to see if they are fast reloadable
-            (GameChapter.StartOfGame, _) => false,
+            (GameChapter.StartOfTheGame, _) => false,
             (GameChapter.InsideTheGame, _) => false,
             (GameChapter.TogetherAtLast, _) => false,
             _ => true,

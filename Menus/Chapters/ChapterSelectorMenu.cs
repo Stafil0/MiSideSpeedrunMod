@@ -41,7 +41,7 @@ internal static class ChapterSelectorMenu
                 var selectedChapter = chapter;
                 new PauseMenuOptionFactory()
                     .SetObjectName($"ChapterSelectorMenuOption_{selectedChapter}")
-                    .SetName(selectedChapter.ToString())
+                    .SetName(selectedChapter.ToDisplayName())
                     .SetParent(page)
                     .SetOnClick(() => ChapterSelector.Load(selectedChapter, fullReload: true))
                     .CloseOnClick()

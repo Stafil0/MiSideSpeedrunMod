@@ -42,15 +42,15 @@ public static class PracticeManager
                 CurrentChapter = GameChapter.None;
                 CurrentMinigame = ChapterMinigame.None;
                 break;
-            case GameChapter.StartOfGame when minigame == ChapterMinigame.TamagotchiCutting:
+            case GameChapter.StartOfTheGame when minigame == ChapterMinigame.TamagotchiCutting:
                 TamagotchiCuttingMinigame.QueueLoad();
                 break;
-            case GameChapter.StartOfGame when minigame == ChapterMinigame.TamagotchiFull:
+            case GameChapter.StartOfTheGame when minigame == ChapterMinigame.TamagotchiFull:
                 TamagotchiFullMinigame.QueueLoad();
                 break;
             case GameChapter.InsideTheGame when oldMinigame == ChapterMinigame.TamagotchiFull:
                 // looping back to the start of game to continue the tamagotchi full practice run
-                ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull);
+                ChapterSelector.Load(GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiFull);
                 return;
             case GameChapter.ChibiMita when minigame == ChapterMinigame.MakeMannequin:
                 MannequinMinigame.QueueLoad();

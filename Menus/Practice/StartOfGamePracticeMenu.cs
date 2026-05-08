@@ -34,11 +34,11 @@ public static class StartOfGamePracticeMenu
     
     private static void LoadTamagotchiFullRun()
     {
-        ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull);
+        ChapterSelector.Load(GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiFull);
     }
     
     private static void Load2DCutting()
     {
-        ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting);
+        ChapterSelector.Load(GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiCutting);
     }
 }
