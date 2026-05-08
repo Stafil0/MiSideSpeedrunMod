@@ -4,8 +4,10 @@ using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using MenuLib.API;
 using SpeedrunMod.Configs;
 using SpeedrunMod.Events;
+using SpeedrunMod.Menus;
 using SpeedrunMod.Practice;
 using SpeedrunMod.Utils;
 
@@ -32,6 +34,7 @@ internal class Plugin : BasePlugin
 
         SceneLoadedEvent.RegisterEvent();
         MenuInitializedEvent.RegisterEvent();
+        PauseMenuInitializedEvent.RegisterEvent();
         ChapterSelector.Initialize();
 
         GetVersion().Wait();

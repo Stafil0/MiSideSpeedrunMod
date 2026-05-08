@@ -137,6 +137,7 @@ public static class ChapterSelector
             (GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots) => true,
             (GameChapter.ReadingBooks, _) => true,
 #if DEBUG
+            // TODO: still need to check other chapters to see if they are fast reloadable
             (GameChapter.StartOfGame, _) => false,
             (GameChapter.InsideTheGame, _) => false,
             (GameChapter.TogetherAtLast, _) => false,

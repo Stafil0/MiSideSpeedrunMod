@@ -17,6 +17,8 @@ public class TimeUtil
         if (hz <= 0f)
             hz = 60;
 
+        // On high refresh rate displays, the time scale can get too high and cause FPS to 
+        // drop dramatically. This is a hack to prevent that.
         var candidate = Time.timeScale * multiplier;
         var maxScale = TimescaleThreshold / hz;
         Time.timeScale = Mathf.Min(candidate, maxScale);
