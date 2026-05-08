@@ -9,7 +9,7 @@ namespace SpeedrunMod.Menus;
 
 internal static class ChapterSelectorMenu
 {
-    private const int PageSize = 7;
+    private const int PageSize = 9;
 
     internal static void CreateMenu(PauseMenu menu)
     {
