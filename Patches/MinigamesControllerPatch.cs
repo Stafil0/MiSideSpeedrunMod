@@ -10,7 +10,7 @@ internal class MinigamesControllerPatch
     private static void ExitGamePatch()
     {
         // Plugin.Log.LogInfo("Exiting game?");
-        // if (PracticeManager.SelectedGame == PracticeGames.MakeMannequin)
+        // if (PracticeManager.CurrentMinigame == PracticeMinigames.MakeMannequin)
         // {
         //     Plugin.Log.LogInfo("Exiting game");
         //     // MannequinMinigame.Reload();

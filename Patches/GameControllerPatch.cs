@@ -10,6 +10,8 @@ public class GameControllerPatch
     [HarmonyPrefix]
     private static void ExitGamePatch()
     {
-        PracticeManager.SelectedGame = PracticeGames.None;
+        PracticeManager.CurrentChapter = GameChapter.None;
+        PracticeManager.CurrentMinigame = ChapterMinigame.None;
+        ChapterSelector.Reset();
     }
 }

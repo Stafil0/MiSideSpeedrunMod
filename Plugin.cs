@@ -6,6 +6,7 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using SpeedrunMod.Configs;
 using SpeedrunMod.Events;
+using SpeedrunMod.Practice;
 using SpeedrunMod.Utils;
 
 namespace SpeedrunMod;
@@ -31,6 +32,7 @@ internal class Plugin : BasePlugin
 
         SceneLoadedEvent.RegisterEvent();
         MenuInitializedEvent.RegisterEvent();
+        ChapterSelector.Initialize();
 
         GetVersion().Wait();
 

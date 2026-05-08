@@ -56,7 +56,8 @@ public static class PracticeMenu
 
     private static void LoadMakeMannequin()
     {
-        PracticeManager.SelectedGame = PracticeGames.MakeMannequin;
+        PracticeManager.CurrentChapter = GameChapter.ChibiMita;
+        PracticeManager.CurrentMinigame = ChapterMinigame.MakeMannequin;
         GlobalGame.LoadingLevel = "Scene 10 - ManekenWorld";
         SceneManager.LoadScene("SceneLoading");
     }

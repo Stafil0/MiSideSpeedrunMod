@@ -2,6 +2,7 @@ using HarmonyLib;
 using SpeedrunMod.Notifications;
 using SpeedrunMod.Menus.Frames;
 using SpeedrunMod.Menus.Keybinds;
+using SpeedrunMod.Menus.FastReset;
 using SpeedrunMod.Menus.Overlay;
 using SpeedrunMod.Practice;
 using SpeedrunMod.RevealSystems;
@@ -22,6 +23,7 @@ internal class SteamManagerPatch
         VersionText.Update();
         OverlayManager.Update();
         KeybindCapture.Update();
+        FastResetToggle.Update();
         OverlayToggle.Update();
         FpsOverrideToggle.Update();
         FpsUncapToggle.Update();
@@ -30,6 +32,7 @@ internal class SteamManagerPatch
         PracticeManager.Update();
         FpsSettingsMenu.Update();
         OverlaySettingsMenu.Update();
+        FastResetSettingsMenu.Update();
         Triggers.Update();
     }
 }

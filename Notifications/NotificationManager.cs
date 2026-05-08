@@ -121,7 +121,7 @@ internal static class NotificationManager
         if (!gc)
         {
 #if DEBUG
-            Plugin.Log.LogInfo("Tried finding hint screen but a GameController couldn't be found.");
+            Plugin.Log.LogDebug("Tried finding hint screen but a GameController couldn't be found.");
 #endif
             return false;
         }
@@ -138,7 +138,7 @@ internal static class NotificationManager
 
         if (interfaceObject == null)
         {
-            Plugin.Log.LogInfo("Tried finding hint screen but an interface couldn't be found in the GameController.");
+            Plugin.Log.LogDebug("Tried finding hint screen but an interface couldn't be found in the GameController.");
             return false;
         }
 
@@ -154,7 +154,7 @@ internal static class NotificationManager
 
         if (hintScreenObject == null)
         {
-            Plugin.Log.LogInfo("Tried finding hint screen but was unable to find it in the GameController.");
+            Plugin.Log.LogDebug("Tried finding hint screen but was unable to find it in the GameController.");
             return false;
         }
 

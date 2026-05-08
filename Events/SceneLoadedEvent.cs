@@ -20,23 +20,22 @@ internal static class SceneLoadedEvent
         SceneLoaded?.Invoke(scene, mode);
 
 #if DEBUG
-        Plugin.Log.LogInfo($"Loading scene: {scene.name}");
+        Plugin.Log.LogInfo($"Loading scene: {scene.name}, mode: {mode}");
 #endif
         if (scene.name == "SceneMenu")
         {
             VersionText.Start();
-            PracticeManager.SelectedGame = PracticeGames.None;
 
             if (Triggers.IsRevealing())
             {
                 Triggers.HideTriggers();
             }
         }
+        
         if (Triggers.IsRevealing())
         {
             Plugin.Log.LogInfo("Revealing newly loaded triggers");
             Triggers.RevealTriggers();
         }
-        PracticeManager.OnSceneLoad(scene);
     }
 }

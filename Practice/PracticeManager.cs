@@ -1,71 +1,90 @@
-﻿using SpeedrunMod.Practice.DummiesPuzzles;
-using SpeedrunMod.Practice.MakeMannequin;
-using SpeedrunMod.Practice.ReadingBooks;
-using SpeedrunMod.Practice.StartOfGame;
+﻿using SpeedrunMod.Events;
+using SpeedrunMod.Practice.Minigames;
 using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Practice;
 
 public static class PracticeManager
 {
-    public static PracticeGames SelectedGame { get; set; }  = PracticeGames.None;
+    private static bool _initialized;
+    
+    public static GameChapter CurrentChapter { get; set; } = GameChapter.None;
 
-    internal static void OnSceneLoad(Scene scene)
+    public static ChapterMinigame CurrentMinigame { get; set; } = ChapterMinigame.None;
+
+    internal static void Initialize()
     {
-        if(SelectedGame == PracticeGames.None) return;
-        switch (SelectedGame)
+        SceneLoadedEvent.SceneLoaded += OnSceneLoad;
+        _initialized = true;
+    }
+
+    internal static void OnChapterLoad(GameChapter chapter, ChapterMinigame minigame)
+    {
+        CurrentChapter = chapter;
+        CurrentMinigame = minigame;
+    }
+    
+    internal static void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
+        CurrentChapter = ChapterResolver.Resolve(scene.name);
+        CurrentMinigame = ChapterResolver.ResolveMinigame(CurrentChapter, CurrentMinigame);
+
+        if (!CurrentChapter.IsPlayable() && !CurrentMinigame.IsPlayable()) return;
+
+        switch (CurrentChapter, CurrentMinigame)
         {
-            case PracticeGames.TamagotchiCutting:
-                if(scene.name == "Scene 1 - RealRoom") TamagotchiCutting.QueueLoad();
+            case (GameChapter.MainMenu, _):
+                CurrentChapter = GameChapter.None;
+                CurrentMinigame = ChapterMinigame.None;
                 break;
-            case PracticeGames.FullTamagotchiRun:
-                if(scene.name == "Scene 1 - RealRoom") FullTamagotchiRun.QueueLoad();
-                if(scene.name == "Scene 2 - InGame") FullTamagotchiRun.LoadChapter();
+            case (GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting):
+                TamagotchiCuttingMinigame.QueueLoad();
                 break;
-            case PracticeGames.MakeMannequin:
-                if(scene.name == "Scene 10 - ManekenWorld") MannequinMinigame.QueueLoad();
+            case (GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull):
+                TamagotchiFullMinigame.QueueLoad();
                 break;
-            case PracticeGames.FullRunStartOfGame:
-                if(scene.name == "Scene 2 - InGame") FullRunStartOfGame.StartRun();
+            case (GameChapter.InsideTheGame, ChapterMinigame.TamagotchiFull):
+                // looping back to the start of game to continue the tamagotchi full practice run
+                ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull);
                 break;
-            case PracticeGames.ConnectTheDots:
-                if(scene.name == "Scene 11 - Backrooms") ConnectTheDots.QueueLoad();
+            case (GameChapter.ChibiMita, ChapterMinigame.MakeMannequin):
+                MannequinMinigame.QueueLoad();
                 break;
-            case PracticeGames.FullMilaRun:
-                if(scene.name == "Scene 20 - FightMita") FullRunReadingBooks.StartRun();
+            case (GameChapter.Ghostly, ChapterMinigame.ConnectTheDots):
+                ConnectTheDotsMinigame.QueueLoad();
                 break;
-            case PracticeGames.MilaMinigames:
-                if(scene.name == "Scene 19 - Glasses") MilaMinigames.QueueLoad();
+            case (GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames):
+                MilaMinigames.QueueLoad();
                 break;
-            case PracticeGames.None:
-            default:
+            case (_, _):
                 break;
         }
     }
 
     internal static void Update()
     {
-        if(SelectedGame == PracticeGames.None) return;
-        switch (SelectedGame)
+        if (!_initialized) Initialize();
+
+        if (!CurrentMinigame.IsPlayable()) return;
+
+        switch (CurrentMinigame)
         {
-            case PracticeGames.TamagotchiCutting:
-                TamagotchiCutting.Update();
+            case ChapterMinigame.TamagotchiCutting:
+                TamagotchiCuttingMinigame.Update();
                 break;
-            case PracticeGames.FullTamagotchiRun:
-                FullTamagotchiRun.Update();
+            case ChapterMinigame.TamagotchiFull:
+                TamagotchiFullMinigame.Update();
                 break;
-            case PracticeGames.MakeMannequin:
+            case ChapterMinigame.MakeMannequin:
                 MannequinMinigame.Update();
                 break;
-            case PracticeGames.ConnectTheDots:
-                ConnectTheDots.Update();
+            case ChapterMinigame.ConnectTheDots:
+                ConnectTheDotsMinigame.Update();
                 break;
-            case PracticeGames.MilaMinigames:
+            case ChapterMinigame.MilaMinigames:
                 MilaMinigames.Update();
                 break;
-            case PracticeGames.None:
-            case PracticeGames.FullRunStartOfGame:
-            default:
+            case ChapterMinigame.None:
                 break;
         }
     }

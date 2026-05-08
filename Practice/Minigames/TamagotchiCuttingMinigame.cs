@@ -1,15 +1,15 @@
-﻿using SpeedrunMod.Utils;
+using SpeedrunMod.Utils;
 using UnityEngine;
 
-namespace SpeedrunMod.Practice.StartOfGame;
+namespace SpeedrunMod.Practice.Minigames;
 
-public static class TamagotchiCutting
+public static class TamagotchiCuttingMinigame
 {
     private static bool _loadQueued;
     private static GameObject _cookingClone;
     private static GameObject _cookingGameObject;
     private static Tamagotchi_Main _tamagotchiMain;
-    
+
     public static void QueueLoad()
     {
         _loadQueued = true;
@@ -40,36 +40,36 @@ public static class TamagotchiCutting
             Plugin.Log.LogError("Cooking Game could not be found during 2DCutting Practice load");
             return;
         }
-        
+
         _cookingClone = Object.Instantiate(game.gameObject, game.gameObject.transform.parent);
         StartGame(game);
     }
 
     private static void StartGame(TamagotchiGame_Cooking game)
-    { 
+    {
         game.gameObject.active = true;
         _cookingGameObject = game.gameObject;
         Tamagotchi_MiniGame miniGame = game.gameObject.GetComponent<Tamagotchi_MiniGame>();
-        
+
         if (miniGame == null)
         {
             Plugin.Log.LogError("Cooking MiniGame could not be found during 2DCutting Practice StartGame");
             return;
         }
-        
+
         _tamagotchiMain.MiniGamePlay(miniGame);
     }
 
     private static void CleanupStartingScene()
     {
         World gameWorld = Object.FindObjectOfType<World>();
-        
+
         if (gameWorld == null)
         {
             Plugin.Log.LogError("World could not be found during 2DCutting Practice CleanupStart");
             return;
         }
-        
+
         Transform gameTransform = gameWorld.gameObject.transform;
         gameTransform.Find("CutScenes").gameObject.active = false;
         gameTransform.Find("Quests").gameObject.active = false;
@@ -85,7 +85,7 @@ public static class TamagotchiCutting
             Plugin.Log.LogError("Cooking Game could not be found during 2DCutting Practice Reload");
             return;
         }
-        
+
         StartGame(game);
     }
 }
