@@ -22,14 +22,14 @@ public static class ChapterSelector
     internal static void Initialize()
     {
         Reset(force: true);
-        SceneLoadedEvent.SceneLoaded += OnSceneLoaded;
+        SceneLoadedEvent.SceneLoaded += OnSceneLoad;
     }
 
-    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    private static void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (!IsQueued)
         {
-            CurrentChapter = ChapterResolver.Resolve(scene.name);
+            CurrentChapter = ChapterResolver.ResolveChapter(scene.name);
             CurrentMinigame = ChapterResolver.ResolveMinigame(CurrentChapter, CurrentMinigame);
             
             Plugin.Log.LogInfo($"ChapterSelector.OnSceneLoaded: scene={scene.name}, mode={mode}, is queued={IsQueued}, current chapter={CurrentChapter}");
@@ -37,7 +37,7 @@ public static class ChapterSelector
             return;
         }
         
-        var loadedScene = ChapterResolver.Resolve(scene.name);
+        var loadedScene = ChapterResolver.ResolveChapter(scene.name);
         if (IsQueued && loadedScene == GameChapter.MainMenu)
         {
             Plugin.Log.LogInfo($"ChapterSelector.OnSceneLoaded: scene={scene.name}, mode={mode}, is queued={IsQueued}, current chapter={CurrentChapter}, loading queued scene={_queuedScene}, queued chapter={_queuedChapter}, queued minigame={_queuedMinigame}");
@@ -75,7 +75,7 @@ public static class ChapterSelector
 
     internal static void Load(string scene)
     {
-        var chapter = ChapterResolver.Resolve(scene);
+        var chapter = ChapterResolver.ResolveChapter(scene);
         if (!chapter.IsPlayable())
         {
             Plugin.Log.LogWarning($"ChapterSelector.Load: unsupported scene={scene}");
@@ -87,7 +87,7 @@ public static class ChapterSelector
 
     internal static void Load(GameChapter chapter, ChapterMinigame minigame = ChapterMinigame.None)
     {
-        var scene = ChapterResolver.Resolve(chapter, minigame);
+        var scene = ChapterResolver.ResolveScene(chapter, minigame);
         if (string.IsNullOrEmpty(scene))
         {
             Plugin.Log.LogWarning($"ChapterSelector.Start: unsupported pair chapter={chapter}, minigame={minigame}");
@@ -101,11 +101,11 @@ public static class ChapterSelector
 
     private static void QueueLoad(string scene, GameChapter chapter, ChapterMinigame minigame)
     {
-        var isFastReloadable = IsFastReloadable(chapter);
+        var isFastReloadable = IsFastReloadable(chapter, minigame);
 
         Plugin.Log.LogInfo($"ChapterSelector.QueueLoad: is fast reloadable={isFastReloadable}, scene={scene}, chapter={chapter}, minigame={minigame}");
 
-        if (isFastReloadable)
+        if (isFastReloadable || !GameUtil.IsInGame())
         {
             Load(scene, chapter, minigame);
             return;
@@ -128,18 +128,20 @@ public static class ChapterSelector
         PracticeManager.OnChapterLoad(chapter, minigame);
     }
 
-    private static bool IsFastReloadable(GameChapter chapter)
+    private static bool IsFastReloadable(GameChapter chapter, ChapterMinigame minigame)
     {
-#if DEBUG
-        return chapter switch
+        return (chapter, minigame) switch
         {
-            GameChapter.StartOfGame => false,
-            GameChapter.InsideTheGame => false,
-            GameChapter.TogetherAtLast => false,
+            (GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull) => true,
+            (GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting) => true,
+#if DEBUG
+            (GameChapter.StartOfGame, _) => false,
+            (GameChapter.InsideTheGame, _) => false,
+            (GameChapter.TogetherAtLast, _) => false,
             _ => true,
-        };
 #else
-        return false;
+            _ => false,
 #endif
+        };
     }
 }

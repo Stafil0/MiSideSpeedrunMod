@@ -4,7 +4,7 @@ namespace SpeedrunMod.Practice;
 
 internal static class ChapterResolver
 {
-    internal static string Resolve(GameChapter chapter, ChapterMinigame minigame)
+    internal static string ResolveScene(GameChapter chapter, ChapterMinigame minigame)
     {
         if (chapter != GameChapter.None)
         {
@@ -55,7 +55,7 @@ internal static class ChapterResolver
         return null;
     }
 
-    internal static GameChapter Resolve(string scene)
+    internal static GameChapter ResolveChapter(string scene)
     {
         return scene switch
         {
@@ -168,8 +168,8 @@ internal static class ChapterResolver
     internal static GameChapter ResolveNextChapter(GameChapter chapter)
     {
         var current = (int)chapter;
-        var next = GameChapter.MainMenu;
-        var nextValue = (int)next;
+        var next = GameChapter.None;
+        var nextValue = int.MaxValue;
 
         foreach (var c in Enum.GetValues<GameChapter>())
         {

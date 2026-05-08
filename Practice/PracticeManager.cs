@@ -1,5 +1,6 @@
 ﻿using SpeedrunMod.Events;
 using SpeedrunMod.Practice.Minigames;
+using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Practice;
@@ -22,43 +23,50 @@ public static class PracticeManager
     {
         CurrentChapter = chapter;
         CurrentMinigame = minigame;
+        
+        Plugin.Log.LogInfo($"PracticeManager.OnChapterLoad: chapter={chapter}, minigame={minigame}");
     }
     
     internal static void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        CurrentChapter = ChapterResolver.Resolve(scene.name);
-        CurrentMinigame = ChapterResolver.ResolveMinigame(CurrentChapter, CurrentMinigame);
+        var oldChapter = CurrentChapter;
+        var oldMinigame = CurrentMinigame;
+        var chapter = ChapterResolver.ResolveChapter(scene.name);
+        var minigame = ChapterResolver.ResolveMinigame(chapter, oldMinigame);
 
-        if (!CurrentChapter.IsPlayable() && !CurrentMinigame.IsPlayable()) return;
+        Plugin.Log.LogInfo($"PracticeManager.OnSceneLoad: scene={scene.name}, mode={mode}, oldChapter={oldChapter}, oldMinigame={oldMinigame}, chapter={chapter}, minigame={minigame}");
 
-        switch (CurrentChapter, CurrentMinigame)
+        switch (chapter)
         {
-            case (GameChapter.MainMenu, _):
+            case GameChapter.MainMenu:
                 CurrentChapter = GameChapter.None;
                 CurrentMinigame = ChapterMinigame.None;
                 break;
-            case (GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting):
+            case GameChapter.StartOfGame when minigame == ChapterMinigame.TamagotchiCutting:
                 TamagotchiCuttingMinigame.QueueLoad();
                 break;
-            case (GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull):
+            case GameChapter.StartOfGame when minigame == ChapterMinigame.TamagotchiFull:
                 TamagotchiFullMinigame.QueueLoad();
                 break;
-            case (GameChapter.InsideTheGame, ChapterMinigame.TamagotchiFull):
+            case GameChapter.InsideTheGame when oldMinigame == ChapterMinigame.TamagotchiFull:
                 // looping back to the start of game to continue the tamagotchi full practice run
                 ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull);
-                break;
-            case (GameChapter.ChibiMita, ChapterMinigame.MakeMannequin):
+                return;
+            case GameChapter.ChibiMita when minigame == ChapterMinigame.MakeMannequin:
                 MannequinMinigame.QueueLoad();
                 break;
-            case (GameChapter.Ghostly, ChapterMinigame.ConnectTheDots):
+            case GameChapter.Ghostly when minigame == ChapterMinigame.ConnectTheDots:
                 ConnectTheDotsMinigame.QueueLoad();
                 break;
-            case (GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames):
+            case GameChapter.ReadingBooks when minigame == ChapterMinigame.MilaMinigames:
                 MilaMinigames.QueueLoad();
                 break;
-            case (_, _):
-                break;
         }
+
+        if (!chapter.IsPlayable()) return;
+
+        CurrentChapter = chapter;
+        CurrentMinigame = minigame;
     }
 
     internal static void Update()
@@ -66,6 +74,8 @@ public static class PracticeManager
         if (!_initialized) Initialize();
 
         if (!CurrentMinigame.IsPlayable()) return;
+
+        Plugin.Log.LogInfo($"Update: CurrentMinigame={CurrentMinigame}", "PracticeManager", 5f);
 
         switch (CurrentMinigame)
         {

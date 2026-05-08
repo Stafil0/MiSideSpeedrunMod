@@ -1,15 +1,11 @@
+using SpeedrunMod.Utils;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Practice.Minigames;
 
 public static class TamagotchiFullMinigame
 {
-    private static int _loadQueued;
-
-    private static int _queueMobileInteractiveClick;
-    private static int _queueButtonActivate;
-    private static int _queueButtonClick;
+    private static readonly ActionQueue Queue = new();
 
     private static GameObject _smartPhone;
     private static World _gameWorld;
@@ -17,54 +13,19 @@ public static class TamagotchiFullMinigame
 
     public static void QueueLoad()
     {
-        _loadQueued = 30;
-
-        _queueMobileInteractiveClick = 0;
-        _queueButtonActivate = 0;
-        _queueButtonClick = 0;
+        Queue.Clear();
 
         _smartPhone = null;
         _gameWorld = null;
         _camera = null;
+
+        Queue.EnqueueWait(seconds: 0.5f);
+        Queue.Enqueue(Load);
     }
 
     internal static void Update()
     {
-        if (_loadQueued > 0)
-        {
-            _loadQueued--;
-            if (_loadQueued == 0)
-            {
-                Load();
-            }
-        }
-
-        if (_queueMobileInteractiveClick > 0)
-        {
-            _queueMobileInteractiveClick--;
-            if (_queueMobileInteractiveClick == 0)
-            {
-                MobileButtonInteractiveClick();
-            }
-        }
-
-        if (_queueButtonActivate > 0)
-        {
-            _queueButtonActivate--;
-            if (_queueButtonActivate == 0)
-            {
-                ButtonActivate();
-            }
-        }
-
-        if (_queueButtonClick > 0)
-        {
-            _queueButtonClick--;
-            if (_queueButtonClick == 0)
-            {
-                ButtonClick();
-            }
-        }
+        Queue.Tick();
     }
 
     private static void Load()
@@ -73,46 +34,57 @@ public static class TamagotchiFullMinigame
 
         _smartPhone = _gameWorld.transform.Find("World RealRoom/Smartphone").gameObject;
 
-        GameObject gameControlerGameObject = Object.FindObjectOfType<GameController>().gameObject;
+        // We need to enable the player otherwise the smartphone grab action won't work
+        var gameControlerGameObject = Object.FindObjectOfType<GameController>().gameObject;
         gameControlerGameObject.transform.Find("Player").gameObject.active = true;
 
-        GameObject mobileInteractive = _gameWorld.transform.Find("World RealRoom/Interactives/Interactive Mobile").gameObject;
+        // We enable the mobile interactive so it can be used in a next frame
+        var mobileInteractive = _gameWorld.transform.Find("World RealRoom/Interactives/Interactive Mobile").gameObject;
         mobileInteractive.active = true;
-        ObjectInteractive mobileInteractiveObject = mobileInteractive.GetComponent<ObjectInteractive>();
+
+        var mobileInteractiveObject = mobileInteractive.GetComponent<ObjectInteractive>();
         mobileInteractiveObject.active = true;
 
+        // By cleaning up the starting scene we can skip the cutscene
         CleanupStartingScene(_gameWorld);
 
+        // To prevent the player from seeing the game fastforward we disable the camera shotly
         _camera = _gameWorld.transform.Find("CutScenes/CutScene 1 (ДЕНЬ 1)/Camera/MainCamera").GetComponent<Camera>();
         _camera.gameObject.active = false;
 
-        _queueMobileInteractiveClick = 1;
+        // By speeding up the game 10 times it'll play the animations faster
+        // The phone grab animation has to finish before we can continue, I don't know why
         Time.timeScale = 10f;
+
+        Queue.EnqueueWait(seconds: 0.015f);
+        Queue.Enqueue(MobileButtonInteractiveClick);
     }
 
     private static void MobileButtonInteractiveClick()
     {
-        GameObject mobileInteractive = _gameWorld.transform.Find("World RealRoom/Interactives/Interactive Mobile").gameObject;
-        ObjectInteractive mobileInteractiveObject = mobileInteractive.GetComponent<ObjectInteractive>();
+        var mobileInteractive = _gameWorld.transform.Find("World RealRoom/Interactives/Interactive Mobile").gameObject;
+        var mobileInteractiveObject = mobileInteractive.GetComponent<ObjectInteractive>();
         mobileInteractiveObject.Click();
 
-        _queueButtonActivate = 300;
+        Queue.EnqueueWait(seconds: 1f);
+        Queue.Enqueue(ButtonActivate);
     }
 
     private static void ButtonActivate()
     {
         _smartPhone.transform.Find("3D HintKey OpenMessage").gameObject.active = false;
 
-        GameObject playButton = _smartPhone.transform.Find("3D HintKey Play").gameObject;
+        var playButton = _smartPhone.transform.Find("3D HintKey Play").gameObject;
         playButton.active = true;
 
-        _queueButtonClick = 2;
+        Queue.EnqueueWait(seconds: 0.05f);
+        Queue.Enqueue(ButtonClick);
     }
 
     private static void ButtonClick()
     {
-        GameObject playButton = _smartPhone.transform.Find("3D HintKey Play").gameObject;
-        Interface_KeyHint_Key keyHint = playButton.GetComponent<Interface_KeyHint_Key>();
+        var playButton = _smartPhone.transform.Find("3D HintKey Play").gameObject;
+        var keyHint = playButton.GetComponent<Interface_KeyHint_Key>();
         keyHint.KeyDown();
     }
 
@@ -130,6 +102,7 @@ public static class TamagotchiFullMinigame
 
     public static void TamagotchiLoaded()
     {
+        // Once the tamagotchi game has been loaded we can reset the timescale and enable the camera again
         Time.timeScale = 1f;
         _camera.gameObject.active = true;
     }

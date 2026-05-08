@@ -14,21 +14,6 @@ public static class StartOfGamePracticeMenu
             .Build();
         
         new MenuOptionFactory()
-            .SetName("FULL CHAPTER RUN")
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .SetNextLocation(menu) 
-            .SetOnClick(LoadFullChapterRun)
-            .Build();
-        
-        // TODO: Put tutorial close button here
-        
-        new MenuOptionFactory()
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .BuildMenuDivider();
-        
-        new MenuOptionFactory()
             .SetName("FULL TAMAGOTCHI RUN")
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)
@@ -47,11 +32,6 @@ public static class StartOfGamePracticeMenu
         return menu;
     }
     
-    private static void LoadFullChapterRun()
-    {
-        ChapterSelector.Load(GameChapter.StartOfGame);
-    }
-
     private static void LoadTamagotchiFullRun()
     {
         ChapterSelector.Load(GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull);

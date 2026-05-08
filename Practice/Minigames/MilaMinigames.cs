@@ -1,3 +1,4 @@
+using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -13,8 +14,7 @@ public static class MilaMinigames
         Invaders
     }
 
-    private static int _loadQueued;
-    private static int _startQueued;
+    private static readonly ActionQueue Queue = new();
 
     private static GameObject _minigame1Clone;
     private static GameObject _minigame2Clone;
@@ -28,9 +28,8 @@ public static class MilaMinigames
 
     public static void QueueLoad()
     {
-        _loadQueued = 120;
+        Queue.Clear();
 
-        _startQueued = 0;
         _minigame1Clone = null;
         _minigame2Clone = null;
         _minigame3Clone = null;
@@ -41,6 +40,14 @@ public static class MilaMinigames
         HideCamera();
 
         Time.timeScale = 10f;
+
+        Queue.EnqueueWait(seconds: 1f);
+        Queue.Enqueue(Load);
+    }
+
+    internal static void Update()
+    {
+        Queue.Tick();
     }
 
     private static void HideCamera()
@@ -57,33 +64,28 @@ public static class MilaMinigames
         }
     }
 
-    internal static void Update()
+    private static void QueueReload()
     {
-        if (_loadQueued > 0)
-        {
-            _loadQueued--;
-            if (_loadQueued == 0)
+        Queue.EnqueueConditional(
+            () => 
+            _minigameGameObject == null &&
+            _minigame1Clone != null &&
+            _minigame2Clone != null &&
+            _minigame3Clone != null &&
+            _minigame4Clone != null,
+            () =>
             {
-                _loadQueued = 0;
-                Load();
-            }
-        }
+                ReloadGame();
+                QueueReload();
+            });
+    }
 
-        if (_startQueued > 0)
-        {
-            _startQueued--;
-            if (_startQueued == 0)
-            {
-                _startQueued = 0;
-                Location19_GlitchGame game = _minigameGameObject.GetComponent<Location19_GlitchGame>();
-                StartGame(game);
-            }
-        }
-
-        if (_minigameGameObject == null && _minigame1Clone != null && _minigame2Clone != null && _minigame3Clone != null && _minigame4Clone != null)
-        {
-            ReloadGame();
-        }
+    private static void QueueStartGame(Location19_GlitchGame game)
+    {
+        game.gameObject.active = true;
+        _minigameGameObject = game.gameObject;
+        Queue.EnqueueWait(seconds: 0.05f);
+        Queue.Enqueue(() => StartGame(game));
     }
 
     private static void Load()
@@ -116,13 +118,7 @@ public static class MilaMinigames
         }
 
         ReloadGame();
-    }
-
-    private static void QueueStartGame(Location19_GlitchGame game)
-    {
-        game.gameObject.active = true;
-        _minigameGameObject = game.gameObject;
-        _startQueued = 5;
+        QueueReload();
     }
 
     private static void StartGame(Location19_GlitchGame game)
