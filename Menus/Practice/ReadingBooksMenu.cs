@@ -15,14 +15,6 @@ public static class ReadingBooksMenu
             .Build();
         
         new MenuOptionFactory()
-            .SetName("FULL CHAPTER RUN")
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .SetNextLocation(menu) 
-            .SetOnClick(LoadFullChapterRun)
-            .Build();
-        
-        new MenuOptionFactory()
             .SetName("PLAY ALL MINIGAMES")
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)
@@ -70,11 +62,6 @@ public static class ReadingBooksMenu
         return menu;
     }
     
-    private static void LoadFullChapterRun()
-    {
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.None);
-    }
-
     private static void LoadAllMinigames()
     {
         MilaMinigames.LoopThroughAllMinigames = true;

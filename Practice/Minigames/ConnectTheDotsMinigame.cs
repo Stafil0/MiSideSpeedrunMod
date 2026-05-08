@@ -84,7 +84,7 @@ internal class ConnectTheDotsMinigame
         ObjectInteractive objectInteractive = door.GetComponent<ObjectInteractive>();
         objectInteractive.Click();
 
-        Time.timeScale = 10;
+        TimeUtil.MultiplyTimeScale(10);
 
         PlayNextGame(delaySeconds: 5f);
     }
@@ -109,7 +109,7 @@ internal class ConnectTheDotsMinigame
             _lever2Object = game;
         }
 
-        Time.timeScale = 10;
+        TimeUtil.MultiplyTimeScale(10);
         Queue.EnqueueWait(seconds: delaySeconds);
         Queue.Enqueue(GameStart);
     }
@@ -124,7 +124,7 @@ internal class ConnectTheDotsMinigame
 
     private static void GameStart()
     {
-        Time.timeScale = 1;
+        TimeUtil.ResetTimeScale();
         GameObject gameLines;
         if (PlayingGame == 1)
         {

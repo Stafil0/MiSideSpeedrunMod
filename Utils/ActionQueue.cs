@@ -39,19 +39,6 @@ internal sealed class ActionQueue
         });
     }
 
-    /// <summary>Completes when <paramref name="ready"/> returns true; then runs <paramref name="work"/> once.</summary>
-    public void EnqueueConditional(Func<bool> ready, Action work)
-    {
-        _queue.Enqueue(() =>
-        {
-            if (!ready())
-                return false;
-
-            work();
-            return true;
-        });
-    }
-
     public void Tick()
     {
         while (_queue.Count > 0)

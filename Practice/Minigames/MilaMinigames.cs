@@ -39,15 +39,16 @@ public static class MilaMinigames
 
         HideCamera();
 
-        Time.timeScale = 10f;
+        TimeUtil.MultiplyTimeScale(10);
 
-        Queue.EnqueueWait(seconds: 1f);
+        Queue.EnqueueWait(seconds: 3f);
         Queue.Enqueue(Load);
     }
 
     internal static void Update()
     {
         Queue.Tick();
+        EnsureLoaded();
     }
 
     private static void HideCamera()
@@ -64,33 +65,29 @@ public static class MilaMinigames
         }
     }
 
-    private static void QueueReload()
+    private static void EnsureLoaded()
     {
-        Queue.EnqueueConditional(
-            () => 
-            _minigameGameObject == null &&
+        if (_minigameGameObject == null &&
             _minigame1Clone != null &&
             _minigame2Clone != null &&
             _minigame3Clone != null &&
-            _minigame4Clone != null,
-            () =>
-            {
-                ReloadGame();
-                QueueReload();
-            });
+            _minigame4Clone != null)
+        {
+            ReloadGame();
+        }
     }
 
     private static void QueueStartGame(Location19_GlitchGame game)
     {
         game.gameObject.active = true;
         _minigameGameObject = game.gameObject;
-        Queue.EnqueueWait(seconds: 0.05f);
+        Queue.EnqueueWait(seconds: 0.1f);
         Queue.Enqueue(() => StartGame(game));
     }
 
     private static void Load()
     {
-        Time.timeScale = 1f;
+        TimeUtil.ResetTimeScale();
         CleanupStartingScene();
 
         Location19_GlitchGame[] games = Object.FindObjectsOfType<Location19_GlitchGame>(true);
@@ -118,12 +115,11 @@ public static class MilaMinigames
         }
 
         ReloadGame();
-        QueueReload();
     }
 
     private static void StartGame(Location19_GlitchGame game)
     {
-        Time.timeScale = 1f;
+        TimeUtil.ResetTimeScale();
         if (_camera != null)
         {
             _camera.gameObject.active = true;
@@ -191,7 +187,7 @@ public static class MilaMinigames
 
     public static void GameEnded(Location19_GlitchGame game)
     {
-        Time.timeScale = 10f;
+        TimeUtil.MultiplyTimeScale(10);
         game.eventReady = new UnityEvent();
         HideCamera();
     }

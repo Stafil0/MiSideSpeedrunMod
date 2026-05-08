@@ -135,6 +135,7 @@ public static class ChapterSelector
             (GameChapter.StartOfGame, ChapterMinigame.TamagotchiFull) => true,
             (GameChapter.StartOfGame, ChapterMinigame.TamagotchiCutting) => true,
             (GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots) => true,
+            (GameChapter.ReadingBooks, _) => true,
 #if DEBUG
             (GameChapter.StartOfGame, _) => false,
             (GameChapter.InsideTheGame, _) => false,

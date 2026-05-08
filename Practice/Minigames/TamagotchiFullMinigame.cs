@@ -54,7 +54,7 @@ public static class TamagotchiFullMinigame
 
         // By speeding up the game 10 times it'll play the animations faster
         // The phone grab animation has to finish before we can continue, I don't know why
-        Time.timeScale = 10f;
+        TimeUtil.MultiplyTimeScale(10);
 
         Queue.EnqueueWait(seconds: 0.1f);
         Queue.Enqueue(MobileButtonInteractiveClick);
@@ -103,7 +103,7 @@ public static class TamagotchiFullMinigame
     public static void TamagotchiLoaded()
     {
         // Once the tamagotchi game has been loaded we can reset the timescale and enable the camera again
-        Time.timeScale = 1f;
+        TimeUtil.ResetTimeScale();
         _camera.gameObject.active = true;
     }
 }
