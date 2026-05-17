@@ -1,6 +1,6 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
 using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Menus.Practice;
@@ -69,34 +69,34 @@ public static class ReadingBooksMenu
         // and it will also reload during the first time you load the minigame
         // If we set the minigame mode to Laser it will actually play towers
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Invaders;
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames);
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadLaserMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Laser;
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames);
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadTowersMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Towers;
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames);
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadShapesMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Shapes;
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames);
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadInvadersMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Invaders;
-        ChapterSelector.Load(GameChapter.ReadingBooks, ChapterMinigame.MilaMinigames);
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
 }

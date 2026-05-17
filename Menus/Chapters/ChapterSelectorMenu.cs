@@ -1,24 +1,20 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
 
 namespace SpeedrunMod.Menus;
 
 internal static class ChapterSelectorMenu
 {
-    private const int PageSize = 9;
+    private const int PageSize = 8;
 
     internal static void CreateMenu(PauseMenu menu)
     {
-        var playableChapters = Enum.GetValues(typeof(GameChapter))
-            .Cast<GameChapter>()
-            .Where(chapter => chapter.IsPlayable())
-            .ToArray();
+        var playableChapters = ChapterResolver.Playable;
         
-        if (playableChapters.Length == 0)
+        if (playableChapters.Count == 0)
         {
             return;
         }
@@ -40,8 +36,8 @@ internal static class ChapterSelectorMenu
             {
                 var selectedChapter = chapter;
                 new PauseMenuOptionFactory()
-                    .SetObjectName($"ChapterSelectorMenuOption_{selectedChapter}")
-                    .SetName(selectedChapter.ToDisplayName())
+                    .SetObjectName($"ChapterSelectorMenuOption_{selectedChapter.Id}")
+                    .SetName(selectedChapter.DisplayName)
                     .SetParent(page)
                     .SetOnClick(() => ChapterSelector.Load(selectedChapter, fullReload: true))
                     .CloseOnClick()

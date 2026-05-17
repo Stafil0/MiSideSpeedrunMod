@@ -1,6 +1,7 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Menus.Practice;
 
@@ -34,11 +35,11 @@ public static class StartOfGamePracticeMenu
     
     private static void LoadTamagotchiFullRun()
     {
-        ChapterSelector.Load(GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiFull);
+        ChapterSelector.Load(ChapterKey.StartOfTheGame, MinigameKey.TamagotchiFull);
     }
     
     private static void Load2DCutting()
     {
-        ChapterSelector.Load(GameChapter.StartOfTheGame, ChapterMinigame.TamagotchiCutting);
+        ChapterSelector.Load(ChapterKey.StartOfTheGame, MinigameKey.TamagotchiCutting);
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using SpeedrunMod.Practice;
+using System;
 using SpeedrunMod.RevealSystems;
 using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;

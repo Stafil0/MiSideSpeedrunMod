@@ -4,11 +4,9 @@ using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using MenuLib.API;
 using SpeedrunMod.Configs;
 using SpeedrunMod.Events;
-using SpeedrunMod.Menus;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
 using SpeedrunMod.Utils;
 
 namespace SpeedrunMod;

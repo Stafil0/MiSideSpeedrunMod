@@ -1,7 +1,7 @@
 using SpeedrunMod.Configs;
 using SpeedrunMod.Menus.Keybinds;
 using SpeedrunMod.Notifications;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
 using SpeedrunMod.Utils;
 using UnityEngine;
 
@@ -75,7 +75,7 @@ internal static class FastResetToggle
             case FastResetAction.PreviousChapter:
             {
                 var previousChapter = ChapterResolver.ResolvePreviousChapter(ChapterSelector.CurrentChapter);
-                if (!previousChapter.IsPlayable())
+                if (previousChapter == null || !previousChapter.IsPlayable)
                 {
                     Plugin.Log.LogWarning($"FastResetToggle.Update: no previous chapter found for {ChapterSelector.CurrentChapter}");
                     return;
@@ -87,7 +87,7 @@ internal static class FastResetToggle
             case FastResetAction.NextChapter:
             {
                 var nextChapter = ChapterResolver.ResolveNextChapter(ChapterSelector.CurrentChapter);
-                if (!nextChapter.IsPlayable())
+                if (nextChapter == null || !nextChapter.IsPlayable)
                 {
                     Plugin.Log.LogWarning($"FastResetToggle.Update: no next chapter found for {ChapterSelector.CurrentChapter}");
                     return;
@@ -98,7 +98,7 @@ internal static class FastResetToggle
             }
             case FastResetAction.RestartChapter:
             {
-                if (!ChapterSelector.CurrentChapter.IsPlayable())
+                if (ChapterSelector.CurrentChapter == null || !ChapterSelector.CurrentChapter.IsPlayable)
                 {
                     Plugin.Log.LogWarning($"FastResetToggle.Update: current chapter '{ChapterSelector.CurrentChapter}' is not playable");
                     return;
@@ -131,10 +131,10 @@ internal static class FastResetToggle
             case FastResetAction.PreviousChapter:
             {
                 var previousChapter = ChapterResolver.ResolvePreviousChapter(ChapterSelector.CurrentChapter);
-                return previousChapter.IsPlayable()
-                    ? $"{prefix}: load previous chapter '{previousChapter.ToDisplayName()}'"
+                return previousChapter != null && previousChapter.IsPlayable
+                    ? $"{prefix}: load previous chapter '{previousChapter.DisplayName}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{previousChapter.ToDisplayName()}' is not valid";
+                    : $"{prefix}: chapter '{previousChapter?.DisplayName ?? "null"}' is not valid";
 #else
                     : string.Empty;
 #endif
@@ -142,10 +142,10 @@ internal static class FastResetToggle
             case FastResetAction.NextChapter:
             {
                 var nextChapter = ChapterResolver.ResolveNextChapter(ChapterSelector.CurrentChapter);
-                return nextChapter.IsPlayable()
-                    ? $"{prefix}: load next chapter '{nextChapter.ToDisplayName()}'"
+                return nextChapter != null && nextChapter.IsPlayable
+                    ? $"{prefix}: load next chapter '{nextChapter.DisplayName}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{nextChapter.ToDisplayName()}' is not valid";
+                    : $"{prefix}: chapter '{nextChapter?.DisplayName ?? "null"}' is not valid";
 #else
                     : string.Empty;
 #endif
@@ -154,10 +154,10 @@ internal static class FastResetToggle
                 return $"{prefix}: start new game";
             case FastResetAction.RestartChapter:
             default:
-                return ChapterSelector.CurrentChapter.IsPlayable()
-                    ? $"{prefix}: restart chapter '{ChapterSelector.CurrentChapter.ToDisplayName()}'"
+                return ChapterSelector.CurrentChapter != null && ChapterSelector.CurrentChapter.IsPlayable
+                    ? $"{prefix}: restart chapter '{ChapterSelector.CurrentChapter.DisplayName}'"
 #if DEBUG
-                    : $"{prefix}: chapter '{ChapterSelector.CurrentChapter.ToDisplayName()}' is not valid";
+                    : $"{prefix}: chapter '{ChapterSelector.CurrentChapter?.DisplayName ?? "null"}' is not valid";
 #else
                     : string.Empty;
 #endif

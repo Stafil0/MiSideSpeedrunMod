@@ -1,0 +1,33 @@
+namespace SpeedrunMod.Practice.Chapters;
+
+public enum ChapterKey
+{
+    None = -100,
+    Loading = -99,
+    MainMenu = 0,
+    StartOfTheGame = 1,
+    InsideTheGame = 2,
+    TogetherAtLast = 3,
+    ThingsGetWeird = 4,
+    ThingsGetScary = 5,
+    TheBasement = 6,
+    BeyondTheWorld = 7,
+    Cappie = 8,
+    TheLoop = 9,
+    ChibiMita = 10,
+    ManekenWorld = 11,
+    DummiesAndForgottenPuzzles = 12,
+    GhostMita = 13,
+    SheJustWantsToSleep = 14,
+    Novels = 15,
+    ReadingBooks = 16,
+    RunAndHide = 17,
+    OldVersion = 18,
+    BeingCandid = 19,
+    TheRealWorld = 20,
+    Reboot = 21,
+    LeaveTheCore = 22,
+    MainEnding = 23,
+    StayEnding = 24,
+    SafeEnding = 25,
+}

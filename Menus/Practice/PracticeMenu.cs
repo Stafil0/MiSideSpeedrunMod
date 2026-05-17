@@ -1,6 +1,8 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
 using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
 using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Menus.Practice;
@@ -56,8 +58,8 @@ public static class PracticeMenu
 
     private static void LoadMakeMannequin()
     {
-        PracticeManager.CurrentChapter = GameChapter.ChibiMita;
-        PracticeManager.CurrentMinigame = ChapterMinigame.MakeMannequin;
+        PracticeManager.CurrentChapter = ChapterResolver.Get(ChapterKey.ChibiMita);
+        PracticeManager.CurrentMinigame = MinigameResolver.Get(MinigameKey.MakeMannequin);
         GlobalGame.LoadingLevel = "Scene 10 - ManekenWorld";
         SceneManager.LoadScene("SceneLoading");
     }

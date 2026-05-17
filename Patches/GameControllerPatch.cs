@@ -1,5 +1,7 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Patches;
 
@@ -10,8 +12,8 @@ public class GameControllerPatch
     [HarmonyPrefix]
     private static void ExitGamePatch()
     {
-        PracticeManager.CurrentChapter = GameChapter.None;
-        PracticeManager.CurrentMinigame = ChapterMinigame.None;
+        PracticeManager.CurrentChapter = ChapterResolver.None;
+        PracticeManager.CurrentMinigame = MinigameResolver.None;
         ChapterSelector.Reset();
     }
 }

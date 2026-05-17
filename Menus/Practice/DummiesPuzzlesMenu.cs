@@ -1,8 +1,7 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
+using SpeedrunMod.Practice.Chapters;
 using SpeedrunMod.Practice.Minigames;
-using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Menus.Practice;
 
@@ -47,20 +46,20 @@ public class DummiesPuzzlesMenu
         // This value is set to 2 because during the first game load this value be switched to 2
         ConnectTheDotsMinigame.PlayingGame = 2;
         ConnectTheDotsMinigame.SwitchGames = true;
-        ChapterSelector.Load(GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots);
+        ChapterSelector.Load(ChapterKey.DummiesAndForgottenPuzzles, MinigameKey.ConnectTheDots);
     }
     
     private static void LoadConnectTheDotsGameOne()
     {
         ConnectTheDotsMinigame.PlayingGame = 1;
         ConnectTheDotsMinigame.SwitchGames = false;
-        ChapterSelector.Load(GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots);
+        ChapterSelector.Load(ChapterKey.DummiesAndForgottenPuzzles, MinigameKey.ConnectTheDots);
     }
     
     private static void LoadConnectTheDotsGameTwo()
     {
         ConnectTheDotsMinigame.PlayingGame = 2;
         ConnectTheDotsMinigame.SwitchGames = false;
-        ChapterSelector.Load(GameChapter.DummiesAndForgottenPuzzles, ChapterMinigame.ConnectTheDots);
+        ChapterSelector.Load(ChapterKey.DummiesAndForgottenPuzzles, MinigameKey.ConnectTheDots);
     }
 }

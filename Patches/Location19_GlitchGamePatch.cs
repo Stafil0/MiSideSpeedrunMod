@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using SpeedrunMod.Practice;
 using SpeedrunMod.Practice.Minigames;
 
@@ -11,7 +11,7 @@ public class Location19_GlitchGamePatch
     [HarmonyPrefix]
     public static void StopGamePatch(Location19_GlitchGame __instance)
     {
-        if (PracticeManager.CurrentMinigame == ChapterMinigame.MilaMinigames)
+        if (PracticeManager.CurrentMinigame != null && PracticeManager.CurrentMinigame.Key == MinigameKey.MilaMinigames)
         {
             MilaMinigames.GameEnded(__instance);
         }
