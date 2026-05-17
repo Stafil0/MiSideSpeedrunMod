@@ -8,6 +8,17 @@ This mod has multiple features that can be useful for messing around with the ga
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Practice` to play specific parts of the game to practice them.  
 These parts will automatically restart when you reach the end.
 
+## Chapter selector
+In the in-game pause menu, open `CHAPTERS` to load any playable story chapter.  
+Chapters are split across pages (use `NEXT` / `PREVIOUS` at the bottom of each page).  
+This always does a full reload (main menu, then load), including the correct chapter entry for shared scenes (e.g. Cappie vs Beyond the World).
+
+## Fast reset
+In the main menu you can go to `Settings->Mods->Speedrun Mod->Fast Reset` to configure in-game chapter resets.  
+Hold the reset key (default `R`) for the configured time (default `1` second); a preview notification shows what will happen.  
+While holding the reset key, use a modifier for other actions (defaults: `Left Shift` = new game, `Left Ctrl` = previous chapter, `Left Alt` = next chapter).  
+Leaving the Novels chapter for another chapter always uses a full reload.
+
 ## Refresh rate settings
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Refresh Rate` to configure a reported refresh rate target.  
 Using refresh rate above `540 Hz` will invalidate the run.  
@@ -53,12 +64,17 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
     <td>Overlay toggle</td>
     <td>In-game: toggle overlay on/off. Rebind under Overlay settings.</td>
   </tr>
+  <tr>
+    <td>R hold (configurable)</td>
+    <td>Fast reset</td>
+    <td>In-game: hold to restart chapter; combine with modifier keys for previous/next chapter or new game. See Fast Reset settings.</td>
+  </tr>
 </table> 
 
 # Installing
 Before you can install this mod you need to have BepInEx with Il2Cpp support installed, this can be downloaded on their [Bleeding Edge download page](https://builds.bepinex.dev/projects/bepinex_be).  
 You then need to extract the zip file to your game directory.  
-Then you can download the most recent version on github through the releases section and put this dll file in the plugin folder.  
+Then you can download the most recent version on github through the releases section and put `SliceCraft.SpeedrunMod.dll` and `SliceCraft.MenuLib.dll` in the plugin folder.  
 You can find this folder at `MiSide/BepInEx/plugins`.
 
 # Contributing
