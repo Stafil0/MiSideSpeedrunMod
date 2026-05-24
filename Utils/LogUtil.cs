@@ -12,14 +12,42 @@ public static class LogUtil
         string message, 
         string context,
         float throttleSeconds = 0f)
+    => Log(source, BepInEx.Logging.LogLevel.Info, message, context, throttleSeconds);
+
+    public static void LogWarning(
+        this BepInEx.Logging.ManualLogSource source,
+        string message,
+        string context,
+        float throttleSeconds = 0f)
+    => Log(source, BepInEx.Logging.LogLevel.Warning, message, context, throttleSeconds);
+
+    public static void LogDebug(
+        this BepInEx.Logging.ManualLogSource source,
+        string message,
+        string context,
+        float throttleSeconds = 0f)
+    => Log(source, BepInEx.Logging.LogLevel.Debug, message, context, throttleSeconds);
+
+    public static void LogError(
+        this BepInEx.Logging.ManualLogSource source,
+        string message,
+        string context,
+        float throttleSeconds = 0f)
+    => Log(source, BepInEx.Logging.LogLevel.Error, message, context, throttleSeconds);
+
+    public static void Log(
+        this BepInEx.Logging.ManualLogSource source,
+        BepInEx.Logging.LogLevel level,
+        string message,
+        string context,
+        float throttleSeconds = 0f)
     {
         var now = Time.realtimeSinceStartup;
-        if (throttleSeconds > 0f)
-        {
-            if (now - _lastLogTimes.GetOrAdd(context, now) < throttleSeconds) return;
-        }
+        var timePassed = now - _lastLogTimes.GetOrAdd(context, 0);
 
-        source.LogInfo($"[{context}] {message}");
+        if (throttleSeconds > 0f && timePassed < throttleSeconds) return;
+
+        source.Log(level, $"[{context}] {message}");
         _lastLogTimes.AddOrUpdate(context, now, (_, _) => now);
     }
 }
