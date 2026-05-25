@@ -40,17 +40,35 @@ internal static class Triggers
             : $"[Triggers] Cached event stub on {entry.Name} (no collider size, default cube on reveal)");
     }
 
-    internal static void ClearEntries()
+    public static bool IsRevealing()
+    {
+        return _isRevealing;
+    }
+
+    internal static void Clear()
     {
         int count = Entries.Count;
+
+        foreach (var (_, entry) in Entries)
+        {
+            DestroyEntry(entry);
+        }
+
         ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
+
         Plugin.Log.LogInfo($"[Triggers] ClearEntries removed {count} entries");
     }
 
-    internal static void RevealTriggers()
+    internal static void Hide()
     {
-        HideTriggers();
+        Clear();
+        _isRevealing = false;
+    }
+
+    internal static void Reveal()
+    {
+        Clear();
         _isRevealing = true;
 
         int count = 0;
@@ -71,7 +89,7 @@ internal static class Triggers
         var objects = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var obj in objects)
         {
-            AddTriggerRevealer(obj, type);
+            AddRevealer(obj, type);
         }
 
         if (objects.Length > 0)
@@ -82,7 +100,7 @@ internal static class Triggers
         return objects.Length;
     }
 
-    private static void AddTriggerRevealer(Component trigger, string type)
+    private static void AddRevealer(Component trigger, string type)
     {
         GameObject gameObject = trigger.gameObject;
         bool hasShape = TryCreateRevealShape(trigger, out GameObject newObject);
@@ -384,43 +402,21 @@ internal static class Triggers
         _ => new Color(1f, 1f, 1f, .2f)
     };
 
-    internal static void HideTriggers()
+    private static void DestroyEntry(TriggerEntry entry)
     {
-        _isRevealing = false;
-        int removed = 0;
-        int kept = 0;
-        foreach (var (id, entry) in Entries)
+        if (entry.Shape != null)
         {
-            if (entry.Shape != null)
-            {
-                ObjectRegistry.Destroy(entry.Shape);
-                entry.Shape = null;
-                entry.HasShape = false;
-            }
-
-            if (entry.Label != null)
-            {
-                ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
-                entry.Label = null;
-            }
-
-            if (!entry.ColliderSize.HasValue)
-            {
-                Entries.Remove(id);
-                removed++;
-            }
-            else
-            {
-                kept++;
-            }
+            ObjectRegistry.Destroy(entry.Shape);
+            entry.Shape = null;
+            entry.HasShape = false;
         }
 
-        Plugin.Log.LogInfo($"[Triggers] HideTriggers removed {removed} entries, kept {kept} stubs");
-    }
-
-    public static bool IsRevealing()
-    {
-        return _isRevealing;
+        if (entry.Label != null)
+        {
+            ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
+            ObjectRegistry.Destroy(entry.Label.gameObject);
+            entry.Label = null;
+        }
     }
 
     internal static void Update()

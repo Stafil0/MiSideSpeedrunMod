@@ -1,5 +1,6 @@
 using System;
 using SpeedrunMod.RevealSystems.Colliders;
+using SpeedrunMod.RevealSystems.Interactables;
 using SpeedrunMod.RevealSystems.Triggers;
 using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;
@@ -27,27 +28,39 @@ internal static class SceneLoadedEvent
 
             if (Triggers.IsRevealing())
             {
-                Triggers.HideTriggers();
+                Triggers.Hide();
             }
 
             if (Colliders.IsRevealing())
             {
-                Colliders.HideColliders();
+                Colliders.Hide();
+            }
+
+            if (Interactables.IsRevealing())
+            {
+                Interactables.Hide();
             }
         }
 
         if (Triggers.IsRevealing())
         {
-            Triggers.ClearEntries();
+            Triggers.Clear();
             Plugin.Log.LogInfo("Revealing newly loaded triggers");
-            Triggers.RevealTriggers();
+            Triggers.Reveal();
         }
 
         if (Colliders.IsRevealing())
         {
-            Colliders.ClearEntries();
-            Plugin.Log.LogInfo("Revealing newly loaded colliders");
-            Colliders.RevealColliders();
+            Colliders.Clear();
+            Plugin.Log.LogInfo("Revealing newly loaded physics colliders");
+            Colliders.Reveal();
+        }
+
+        if (Interactables.IsRevealing())
+        {
+            Interactables.Clear();
+            Plugin.Log.LogInfo("Revealing newly loaded interactable colliders");
+            Interactables.Reveal();
         }
     }
 }

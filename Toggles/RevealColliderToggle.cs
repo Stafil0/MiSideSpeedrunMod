@@ -1,5 +1,6 @@
 using SpeedrunMod.Notifications;
 using SpeedrunMod.RevealSystems.Colliders;
+using UnityEngine;
 
 namespace SpeedrunMod.Toggles;
 
@@ -7,19 +8,22 @@ internal static class RevealColliderToggle
 {
     internal static void Update()
     {
-        if (!UnityEngine.Input.GetKey(UnityEngine.KeyCode.LeftAlt) || !UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.H)) return;
+        if (!Input.GetKey(KeyCode.LeftAlt) || !Input.GetKeyDown(KeyCode.H))
+        {
+            return;
+        }
 
         if (Colliders.IsRevealing())
         {
-            NotificationManager.Show(new NotificationMessage("Collider reveal off"));
-            Plugin.Log.LogInfo("Collider reveal off");
-            Colliders.HideColliders();
+            NotificationManager.Show(new NotificationMessage("Physics colliders off"));
+            Plugin.Log.LogInfo("Physics colliders turned off");
+            Colliders.Hide();
         }
         else
         {
-            NotificationManager.Show(new NotificationMessage("Collider reveal on"));
-            Plugin.Log.LogInfo("Collider reveal on");
-            Colliders.RevealColliders();
+            NotificationManager.Show(new NotificationMessage("Physics colliders on"));
+            Plugin.Log.LogInfo("Physics colliders turned on");
+            Colliders.Reveal();
         }
     }
 }

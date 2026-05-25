@@ -66,16 +66,15 @@ internal static class ColliderUtil
             case BoxCollider box:
                 reveal.localPosition = box.center;
                 reveal.localScale = box.size;
-                break;
+                return;
 
             case SphereCollider sphere:
                 reveal.localPosition = sphere.center;
                 reveal.localScale = Vector3.one * (sphere.radius * 2f);
-                break;
+                return;
 
             case CapsuleCollider capsule:
-                reveal.localPosition = capsule.center;
-                ApplyCapsuleScale(reveal, capsule);
+                ApplyCapsuleTransform(reveal, capsule);
                 break;
 
             default:
@@ -84,10 +83,9 @@ internal static class ColliderUtil
                 reveal.localRotation = Quaternion.identity;
                 reveal.localPosition = collider.transform.InverseTransformPoint(bounds.center);
                 reveal.localScale = BoundsToLocalScale(collider.transform, bounds.size);
+                FitToColliderBounds(reveal, collider);
                 break;
         }
-
-        FitToColliderBounds(reveal, collider);
     }
 
     private static void FitToColliderBounds(Transform reveal, Collider collider)
@@ -129,23 +127,19 @@ internal static class ColliderUtil
             worldSize.z / Mathf.Max(Mathf.Abs(lossy.z), 1e-4f));
     }
 
-    private static void ApplyCapsuleScale(Transform reveal, CapsuleCollider capsule)
+    private static void ApplyCapsuleTransform(Transform reveal, CapsuleCollider capsule)
     {
         float diameter = capsule.radius * 2f;
         float height = Mathf.Max(capsule.height, diameter);
 
-        // Unity capsule primitive: height 2, diameter 1 at unit scale.
-        switch (capsule.direction)
+        reveal.localPosition = capsule.center;
+        // Primitive capsule mesh is Y-up (height 2, diameter 1); rotate to match CapsuleCollider.direction.
+        reveal.localRotation = capsule.direction switch
         {
-            case 0:
-                reveal.localScale = new Vector3(height * 0.5f, diameter, diameter);
-                break;
-            case 2:
-                reveal.localScale = new Vector3(diameter, diameter, height * 0.5f);
-                break;
-            default:
-                reveal.localScale = new Vector3(diameter, height * 0.5f, diameter);
-                break;
-        }
+            0 => Quaternion.Euler(0f, 0f, 90f),
+            2 => Quaternion.Euler(90f, 0f, 0f),
+            _ => Quaternion.identity,
+        };
+        reveal.localScale = new Vector3(diameter, height * 0.5f, diameter);
     }
 }

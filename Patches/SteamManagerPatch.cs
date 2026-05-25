@@ -6,6 +6,7 @@ using SpeedrunMod.Menus.FastReset;
 using SpeedrunMod.Menus.Overlay;
 using SpeedrunMod.Practice;
 using SpeedrunMod.RevealSystems.Colliders;
+using SpeedrunMod.RevealSystems.Interactables;
 using SpeedrunMod.RevealSystems.Triggers;
 using SpeedrunMod.Toggles;
 using SpeedrunMod.Overlay;
@@ -31,11 +32,13 @@ internal class SteamManagerPatch
         EnableRunToggle.Update();
         RevealTriggerToggle.Update();
         RevealColliderToggle.Update();
+        RevealInteractableToggle.Update();
         PracticeManager.Update();
         FpsSettingsMenu.Update();
         OverlaySettingsMenu.Update();
         FastResetSettingsMenu.Update();
         Triggers.Update();
         Colliders.Update();
+        Interactables.Update();
     }
 }

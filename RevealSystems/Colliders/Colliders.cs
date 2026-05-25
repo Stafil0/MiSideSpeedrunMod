@@ -8,65 +8,48 @@ namespace SpeedrunMod.RevealSystems.Colliders;
 
 internal static class Colliders
 {
+    private const float RescanIntervalSeconds = 2f;
+
     private static readonly Dictionary<int, ColliderEntry> Entries = new();
     private static bool _isRevealing;
+    private static float _nextRescanAt;
 
-    private static readonly int Color = Shader.PropertyToID("_Color");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int Mode = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
 
-    private static readonly (string Type, Func<int> Process)[] RevealSources =
-    {
-        ("box", () => ProcessColliders<BoxCollider>("box")),
-        ("sphere", () => ProcessColliders<SphereCollider>("sphere")),
-        ("capsule", () => ProcessColliders<CapsuleCollider>("capsule")),
-    };
-
-    internal static void RevealColliders()
-    {
-        HideColliders();
-        _isRevealing = true;
-
-        int count = 0;
-        foreach (var (_, process) in RevealSources)
-        {
-            count += process();
-        }
-
-        Plugin.Log.LogInfo($"[Colliders] RevealColliders drew {count} colliders ({Entries.Count} entries)");
-    }
-
-    internal static void HideColliders()
-    {
-        _isRevealing = false;
-
-        foreach (ColliderEntry entry in Entries.Values)
-        {
-            if (entry.Shape != null)
-            {
-                ObjectRegistry.Destroy(entry.Shape);
-            }
-
-            if (entry.Label != null)
-            {
-                ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
-            }
-        }
-
-        int count = Entries.Count;
-        ObjectRegistry.Clear(Entries.Keys);
-        Entries.Clear();
-
-        Plugin.Log.LogInfo($"[Colliders] HideColliders removed {count} entries");
-    }
-
     internal static bool IsRevealing() => _isRevealing;
 
-    internal static void ClearEntries()
+    internal static void Reveal()
     {
+        Clear();
+        _isRevealing = true;
+        _nextRescanAt = Time.realtimeSinceStartup + RescanIntervalSeconds;
+
+        int count = ScanColliders();
+        Plugin.Log.LogInfo($"[Colliders] Reveal drew {count} colliders ({Entries.Count} entries)");
+    }
+
+    internal static void Hide()
+    {
+        Clear();
+        _isRevealing = false;
+    }
+
+    internal static void Clear()
+    {
+        int count = Entries.Count;
+
+        foreach (var (_, entry) in Entries)
+        {
+            DestroyEntry(entry);
+        }
+
         ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
+
+        Plugin.Log.LogInfo($"[Colliders] Clear removed {count} entries");
     }
 
     internal static void Update()
@@ -74,6 +57,14 @@ internal static class Colliders
         if (!_isRevealing)
         {
             return;
+        }
+
+        float now = Time.realtimeSinceStartup;
+        if (now >= _nextRescanAt)
+        {
+            _nextRescanAt = now + RescanIntervalSeconds;
+            ScanColliders();
+            ClearDestroyedEntries();
         }
 
         Camera cam = Camera.main;
@@ -104,52 +95,70 @@ internal static class Colliders
         }
     }
 
-    private static int ProcessColliders<T>(string type) where T : Collider
+    private static int ScanColliders()
+    {
+        int count = 0;
+
+        count += ProcessColliders<BoxCollider>("box");
+        count += ProcessColliders<SphereCollider>("sphere");
+        count += ProcessColliders<CapsuleCollider>("capsule");
+
+        return count;
+    }
+
+    private static int ProcessColliders<T>(string shapeType) where T : Collider
     {
         PlayerMove playerMove = PlayerUtil.ResolvePlayerMove();
-        T[] colliders = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        T[] colliders = UnityEngine.Object.FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
         int count = 0;
 
         foreach (T collider in colliders)
         {
-            if (!ShouldReveal(collider))
+            if (!ShouldProcess(collider))
             {
                 continue;
             }
 
-            string resolvedType = ResolveType(collider, playerMove, type);
+            string resolvedType = ResolveType(collider, playerMove, shapeType);
 
-            AddColliderReveal(
+            AddRevealer(
                 collider,
                 resolvedType,
                 syncTransform: resolvedType == "player",
                 labelText: $"{typeof(T).Name} : {collider.gameObject.name}");
-            
-            count++;
-        }
 
-        if (colliders.Length > 0)
-        {
-            Plugin.Log.LogInfo($"[Colliders] ProcessColliders<{typeof(T).Name}> type={type} count={count}");
+            count++;
         }
 
         return count;
     }
 
-    private static string ResolveType(Collider collider, PlayerMove playerMove, string defaultType)
+    private static string ResolveType(Collider collider, PlayerMove playerMove, string shapeType)
     {
-        bool onPlayer = PlayerUtil.IsOnPlayerHierarchy(collider, playerMove);
-        bool interactable = InteractiveUtil.IsInteractable(collider);
+        if (PlayerUtil.IsOnPlayerHierarchy(collider, playerMove))
+        {
+            return "player";
+        }
 
-        return onPlayer ? "player"
-            : interactable ? "interactive"
-            : collider.isTrigger ? "trigger"
-            : defaultType;
+        if (collider.isTrigger)
+        {
+            return "trigger";
+        }
+
+        return shapeType;
     }
 
-    private static bool ShouldReveal(Collider collider)
+    private static bool ShouldProcess(Collider collider)
     {
         if (collider == null || !collider.enabled)
+        {
+            return false;
+        }
+
+        if (collider is MeshCollider { convex: false })
         {
             return false;
         }
@@ -164,24 +173,20 @@ internal static class Colliders
             return false;
         }
 
-        if (collider is MeshCollider { convex: false })
+        if (InteractiveUtil.IsInteractable(collider))
         {
             return false;
         }
 
-        var gameObject = collider.gameObject;
-        foreach (Component component in gameObject.GetComponentsInParent<Component>(true))
+        if (ComponentUtil.IsTrigger(collider.gameObject))
         {
-            if (component.GetType().Name.StartsWith("Trigger_"))
-            {
-                return false;
-            }
+            return false;
         }
 
         return true;
     }
 
-    private static void AddColliderReveal(
+    private static void AddRevealer(
         Collider collider,
         string type,
         bool syncTransform,
@@ -201,11 +206,11 @@ internal static class Colliders
             GameObject canvas = ObjectRegistry.CreateCanvas(
                 collider.transform,
                 ColliderUtil.ResolveLabelPosition(collider));
-            
+
             labelUi = ObjectRegistry.CreateLabel(
                 canvas.transform,
                 labelText,
-                GetColorForType(type));
+                GetColor(type));
         }
 
         var entry = new ColliderEntry(collider, type, syncTransform)
@@ -215,13 +220,42 @@ internal static class Colliders
             Label = labelUi
         };
 
-        ApplyRevealStyle(entry);
+        ApplyReveal(entry);
         Entries[collider.GetInstanceID()] = entry;
-
-        Plugin.Log.LogInfo($"[Colliders] Reveal {entry.Name} type={type} hasShape={hasShape}");
     }
 
-    private static void ApplyRevealStyle(ColliderEntry entry)
+    private static void DestroyEntry(ColliderEntry entry)
+    {
+        if (entry.Shape != null)
+        {
+            ObjectRegistry.Destroy(entry.Shape);
+            entry.Shape = null;
+            entry.HasShape = false;
+        }
+
+        if (entry.Label != null)
+        {
+            ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
+            ObjectRegistry.Destroy(entry.Label.gameObject);
+            entry.Label = null;
+        }
+    }
+
+    private static void ClearDestroyedEntries()
+    {
+        foreach (var (id, entry) in Entries)
+        {
+            if (entry.Source != null)
+            {
+                continue;
+            }
+
+            DestroyEntry(entry);
+            Entries.Remove(id);
+        }
+    }
+
+    private static void ApplyReveal(ColliderEntry entry)
     {
         ApplyMaterial(entry.Shape, entry.Type);
 
@@ -230,7 +264,7 @@ internal static class Colliders
             return;
         }
 
-        Color labelColor = GetColorForType(entry.Type);
+        Color labelColor = GetColor(entry.Type);
         entry.Label.color = new Color(labelColor.r, labelColor.g, labelColor.b, 1f);
     }
 
@@ -248,8 +282,8 @@ internal static class Colliders
         }
 
         Material mat = new Material(Shader.Find("Standard"));
-        Color baseColor = GetColorForType(type);
-        mat.SetColor(Color, baseColor);
+        Color baseColor = GetColor(type);
+        mat.SetColor(ColorId, baseColor);
         mat.SetColor("_EmissionColor", baseColor);
         mat.EnableKeyword("_EMISSION");
         mat.SetFloat(Mode, 3);
@@ -260,14 +294,13 @@ internal static class Colliders
         meshRenderer.material = mat;
     }
 
-    private static Color GetColorForType(string type) => type switch
+    private static Color GetColor(string type) => type switch
     {
         "player" => new Color(0.1f, 0.95f, 1f, 0.35f),
         "box" => new Color(1f, 0.55f, 0.1f, 0.25f),
         "sphere" => new Color(0.9f, 0.4f, 1f, 0.25f),
         "capsule" => new Color(1f, 0.85f, 0.2f, 0.25f),
         "trigger" => new Color(0.2f, 1f, 0.45f, 0.3f),
-        "interactive" => new Color(1f, 0.25f, 0.85f, 0.35f),
         _ => new Color(1f, 1f, 1f, 0.2f)
     };
 }
