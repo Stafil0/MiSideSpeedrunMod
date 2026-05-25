@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SpeedrunMod.RevealSystems;
+namespace SpeedrunMod.RevealSystems.Triggers;
 
 internal static class Triggers
 {
@@ -14,7 +13,6 @@ internal static class Triggers
     private static readonly int Mode = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
-    private const string FallbackShapePrefix = "RevealDefault_";
 
     internal static void CacheEventCollider(Trigger_Event trigger, BoxCollider box)
     {
@@ -45,6 +43,7 @@ internal static class Triggers
     internal static void ClearEntries()
     {
         int count = Entries.Count;
+        ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
         Plugin.Log.LogInfo($"[Triggers] ClearEntries removed {count} entries");
     }
@@ -88,14 +87,15 @@ internal static class Triggers
         GameObject gameObject = trigger.gameObject;
         bool hasShape = TryCreateRevealShape(trigger, out GameObject newObject);
 
-        GameObject canvasGUI = CreateCanvas(gameObject);
-        Text label = CreateTextUI(canvasGUI, type, gameObject.name);
+        Transform labelParent = hasShape ? newObject.transform : trigger.transform;
+        GameObject canvasGUI = ObjectRegistry.CreateCanvas(labelParent, hasShape ? 0.55f : 0.5f);
+        
+        Text label = ObjectRegistry.CreateLabel(
+            canvasGUI.transform,
+            $"{type} : {gameObject.name}",
+            GetColorForTrigger(type));
 
-        var revealCollider = newObject.GetComponent<Collider>();
-        if (revealCollider != null)
-        {
-            revealCollider.enabled = false;
-        }
+        ColliderUtil.Disable(newObject);
 
         var id = trigger.GetInstanceID();
         var entry = new TriggerEntry(trigger, type);
@@ -170,20 +170,20 @@ internal static class Triggers
         reveal = null;
         var name = trigger.GetName();
         Collider collider = FindBestCollider(trigger);
+        
         if (collider == null)
         {
             Plugin.Log.LogDebug($"[Triggers] {name} volume: no collider");
             return false;
         }
 
-        reveal = CreatePrimitiveForCollider(collider);
+        reveal = ColliderUtil.CreateShape(collider, "Reveal_" + trigger.gameObject.name);
         if (reveal == null)
         {
             return false;
         }
 
-        reveal.name = "Reveal_" + trigger.gameObject.name;
-        ApplyColliderTransform(reveal.transform, collider);
+        ObjectRegistry.Register(reveal);
 
         Plugin.Log.LogDebug(
             $"[Triggers] {name} volume=collider {collider.GetName()} " +
@@ -205,6 +205,11 @@ internal static class Triggers
 
         foreach (Collider collider in colliders)
         {
+            if (ObjectRegistry.IsInRegistry(collider.gameObject))
+            {
+                continue;
+            }
+
             if (collider is MeshCollider { convex: false })
             {
                 continue;
@@ -219,69 +224,6 @@ internal static class Triggers
         }
 
         return best;
-    }
-
-    private static GameObject CreatePrimitiveForCollider(Collider collider)
-    {
-        return collider switch
-        {
-            BoxCollider => GameObject.CreatePrimitive(PrimitiveType.Cube),
-            SphereCollider => GameObject.CreatePrimitive(PrimitiveType.Sphere),
-            CapsuleCollider => GameObject.CreatePrimitive(PrimitiveType.Capsule),
-            _ => GameObject.CreatePrimitive(PrimitiveType.Cube)
-        };
-    }
-
-    private static void ApplyColliderTransform(Transform reveal, Collider collider)
-    {
-        reveal.SetParent(collider.transform, false);
-        reveal.localRotation = Quaternion.identity;
-
-        switch (collider)
-        {
-            case BoxCollider box:
-                reveal.localPosition = box.center;
-                reveal.localScale = box.size;
-                break;
-
-            case SphereCollider sphere:
-                reveal.localPosition = sphere.center;
-                reveal.localScale = Vector3.one * (sphere.radius * 2f);
-                break;
-
-            case CapsuleCollider capsule:
-                reveal.localPosition = capsule.center;
-                ApplyCapsuleScale(reveal, capsule);
-                break;
-
-            default:
-                Bounds bounds = collider.bounds;
-                reveal.SetParent(collider.transform.parent != null ? collider.transform.parent : collider.transform, true);
-                reveal.position = bounds.center;
-                reveal.rotation = collider.transform.rotation;
-                reveal.localScale = bounds.size;
-                break;
-        }
-    }
-
-    private static void ApplyCapsuleScale(Transform reveal, CapsuleCollider capsule)
-    {
-        // Unity capsule primitive: height 2 (Y), radius 0.5 on X/Z for direction Y.
-        float diameter = capsule.radius * 2f;
-        float height = Mathf.Max(capsule.height, diameter);
-
-        switch (capsule.direction)
-        {
-            case 0: // X
-                reveal.localScale = new Vector3(height * 0.5f, diameter * 0.5f, diameter * 0.5f);
-                break;
-            case 2: // Z
-                reveal.localScale = new Vector3(diameter * 0.5f, diameter * 0.5f, height * 0.5f);
-                break;
-            default: // Y
-                reveal.localScale = new Vector3(diameter * 0.5f, height * 0.5f, diameter * 0.5f);
-                break;
-        }
     }
 
     private static bool TryCreateFromTriggerLogic(Component trigger, out GameObject reveal)
@@ -352,8 +294,8 @@ internal static class Triggers
 
     private static GameObject CreateBoxVolume(Transform parent, Vector3 size, Vector3 localCenter)
     {
-        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        reveal.name = "Reveal_" + parent.name;
+        GameObject reveal = ObjectRegistry.CreatePrimitive(PrimitiveType.Cube, "Reveal_" + parent.name);
+        ColliderUtil.Disable(reveal);
         reveal.transform.SetParent(parent, false);
         reveal.transform.localPosition = localCenter;
         reveal.transform.localRotation = Quaternion.identity;
@@ -363,8 +305,8 @@ internal static class Triggers
 
     private static GameObject CreateSphereVolume(Transform parent, float radius, Vector3 localCenter)
     {
-        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        reveal.name = "Reveal_" + parent.name;
+        GameObject reveal = ObjectRegistry.CreatePrimitive(PrimitiveType.Sphere, "Reveal_" + parent.name);
+        ColliderUtil.Disable(reveal);
         reveal.transform.SetParent(parent, false);
         reveal.transform.localPosition = localCenter;
         reveal.transform.localRotation = Quaternion.identity;
@@ -376,44 +318,13 @@ internal static class Triggers
     private static GameObject CreateDefaultRevealCube(Component trigger)
     {
         var transform = trigger.transform;
-        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        reveal.name = FallbackShapePrefix + transform.name;
+        GameObject reveal = ObjectRegistry.CreatePrimitive(PrimitiveType.Cube, $"RevealDefault_{transform.name}");
+        ColliderUtil.Disable(reveal);
         reveal.transform.SetParent(transform, false);
         reveal.transform.localPosition = Vector3.zero;
         reveal.transform.localRotation = Quaternion.identity;
         reveal.transform.localScale = Vector3.one;
         return reveal;
-    }
-
-    private static GameObject CreateCanvas(GameObject parent)
-    {
-        GameObject canvasGUI = new GameObject("Canvas " + parent.name);
-        canvasGUI.AddComponent<Canvas>();
-        canvasGUI.AddComponent<CanvasScaler>();
-        canvasGUI.AddComponent<GraphicRaycaster>();
-        canvasGUI.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
-        canvasGUI.transform.SetParent(parent.transform, false);
-        canvasGUI.transform.localPosition = Vector3.up * .5f;
-        canvasGUI.GetComponent<RectTransform>().localScale = new Vector3(0.01f, 0.01f);
-        return canvasGUI;
-    }
-
-    private static Text CreateTextUI(GameObject parent, string type, string name)
-    {
-        GameObject textGUI = new GameObject("Text " + parent.name);
-        textGUI.transform.SetParent(parent.transform, false);
-        Text text = textGUI.AddComponent<Text>();
-        text.text = type + " : " + name;
-        text.fontSize = 30;
-        text.horizontalOverflow = HorizontalWrapMode.Overflow;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.alignment = TextAnchor.MiddleCenter;
-
-        text.rectTransform.localPosition = Vector3.zero;
-        text.rectTransform.localScale = new Vector3(0.3f, 0.3f, 1);
-        text.rectTransform.localRotation = Quaternion.identity;
-        return text;
     }
 
     private static void ApplyRevealStyle(TriggerEntry entry)
@@ -482,14 +393,14 @@ internal static class Triggers
         {
             if (entry.Shape != null)
             {
-                Object.Destroy(entry.Shape);
+                ObjectRegistry.Destroy(entry.Shape);
                 entry.Shape = null;
                 entry.HasShape = false;
             }
 
             if (entry.Label != null)
             {
-                Object.Destroy(entry.Label.gameObject.transform.parent.gameObject);
+                ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
                 entry.Label = null;
             }
 

@@ -1,5 +1,5 @@
 ﻿using SpeedrunMod.Notifications;
-using SpeedrunMod.RevealSystems;
+using SpeedrunMod.RevealSystems.Triggers;
 
 namespace SpeedrunMod.Toggles;
 

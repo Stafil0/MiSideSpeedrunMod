@@ -30,9 +30,13 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
 
 ## Trigger reveal (hitboxes)
 Press `Alt + O` in-game to toggle visible trigger volumes.  
-Each trigger type is drawn with a color-coded shape that matches its real bounds when possible (colliders, distance spheres, `Trigger_Event` overlap boxes).  
-`Trigger_Event` box half-extents and center are cached on `Start` before the game removes the box collider, so event triggers still show the correct volume after that.  
+Each trigger type is drawn with a color-coded shape that matches its real bounds when possible (colliders, distance spheres, `Trigger_Event` overlap boxes).
 If no size can be resolved, a default cube is shown and the label is marked `[default cube]`.  
+Volumes stay visible across scene loads while the toggle is on.
+
+## Collider reveal (physics hitboxes)
+Press `Alt + H` in-game to toggle visible physics collider volumes.  
+Draws enabled non-trigger colliders on box, sphere, and capsule types, plus trigger colliders (except `Trigger_*` script volumes).
 Volumes stay visible across scene loads while the toggle is on.
 
 ## Fixes
@@ -50,6 +54,11 @@ Volumes stay visible across scene loads while the toggle is on.
     <td>Alt + O</td>
     <td>Toggle trigger reveal</td>
     <td>In-game: show or hide color-coded trigger hitbox volumes. See Trigger reveal (hitboxes).</td>
+  </tr>
+  <tr>
+    <td>Alt + H</td>
+    <td>Toggle collider reveal</td>
+    <td>In-game: show or hide color-coded physics collider volumes. See Collider reveal (physics hitboxes).</td>
   </tr>
   <tr>
     <td>Alt + L</td>

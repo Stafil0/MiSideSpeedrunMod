@@ -79,14 +79,7 @@ public static class PracticeManager
         {
             return;
         }
-
-        if (chapter.Key == ChapterKey.None
-            && oldChapter.Key != ChapterKey.None
-            && oldChapter.SceneName == scene.name)
-        {
-            return;
-        }
-
+        
         CurrentChapter = chapter;
         CurrentMinigame = minigame;
     }

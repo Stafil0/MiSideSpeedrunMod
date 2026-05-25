@@ -1,5 +1,5 @@
 using HarmonyLib;
-using SpeedrunMod.RevealSystems;
+using SpeedrunMod.RevealSystems.Triggers;
 using UnityEngine;
 
 namespace SpeedrunMod.Patches;

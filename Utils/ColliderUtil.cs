@@ -1,0 +1,151 @@
+using UnityEngine;
+
+namespace SpeedrunMod.Utils;
+
+internal static class ColliderUtil
+{
+    internal static GameObject CreateShape(Collider collider, string name)
+    {
+        if (collider == null)
+        {
+            return null;
+        }
+
+        GameObject reveal = CreatePrimitive(collider);
+        if (reveal == null)
+        {
+            return null;
+        }
+
+        reveal.name = name;
+        ApplyTransform(reveal.transform, collider);
+        Disable(reveal);
+
+        return reveal;
+    }
+
+    internal static Vector3 ResolveLabelPosition(Collider collider, float margin = 0.15f)
+    {
+        if (collider == null)
+        {
+            return Vector3.up * 0.5f;
+        }
+
+        Bounds bounds = collider.bounds;
+        Vector3 worldPos = bounds.center + Vector3.up * (bounds.extents.y + margin);
+        return collider.transform.InverseTransformPoint(worldPos);
+    }
+
+    internal static void Disable(GameObject shape)
+    {
+        Collider revealCollider = shape.GetComponent<Collider>();
+        if (revealCollider != null)
+        {
+            revealCollider.enabled = false;
+        }
+    }
+
+    internal static GameObject CreatePrimitive(Collider collider)
+    {
+        return collider switch
+        {
+            BoxCollider => GameObject.CreatePrimitive(PrimitiveType.Cube),
+            SphereCollider => GameObject.CreatePrimitive(PrimitiveType.Sphere),
+            CapsuleCollider => GameObject.CreatePrimitive(PrimitiveType.Capsule),
+            _ => GameObject.CreatePrimitive(PrimitiveType.Cube)
+        };
+    }
+
+    internal static void ApplyTransform(Transform reveal, Collider collider)
+    {
+        reveal.SetParent(collider.transform, false);
+        reveal.localRotation = Quaternion.identity;
+
+        switch (collider)
+        {
+            case BoxCollider box:
+                reveal.localPosition = box.center;
+                reveal.localScale = box.size;
+                break;
+
+            case SphereCollider sphere:
+                reveal.localPosition = sphere.center;
+                reveal.localScale = Vector3.one * (sphere.radius * 2f);
+                break;
+
+            case CapsuleCollider capsule:
+                reveal.localPosition = capsule.center;
+                ApplyCapsuleScale(reveal, capsule);
+                break;
+
+            default:
+                Bounds bounds = collider.bounds;
+                reveal.SetParent(collider.transform, false);
+                reveal.localRotation = Quaternion.identity;
+                reveal.localPosition = collider.transform.InverseTransformPoint(bounds.center);
+                reveal.localScale = BoundsToLocalScale(collider.transform, bounds.size);
+                break;
+        }
+
+        FitToColliderBounds(reveal, collider);
+    }
+
+    private static void FitToColliderBounds(Transform reveal, Collider collider)
+    {
+        MeshRenderer renderer = reveal.GetComponent<MeshRenderer>();
+        if (renderer == null || collider == null)
+        {
+            return;
+        }
+
+        Bounds target = collider.bounds;
+        Bounds current = renderer.bounds;
+        Vector3 scale = reveal.localScale;
+
+        if (current.size.x > 1e-6f)
+        {
+            scale.x *= target.size.x / current.size.x;
+        }
+
+        if (current.size.y > 1e-6f)
+        {
+            scale.y *= target.size.y / current.size.y;
+        }
+
+        if (current.size.z > 1e-6f)
+        {
+            scale.z *= target.size.z / current.size.z;
+        }
+
+        reveal.localScale = scale;
+    }
+
+    private static Vector3 BoundsToLocalScale(Transform transform, Vector3 worldSize)
+    {
+        Vector3 lossy = transform.lossyScale;
+        return new Vector3(
+            worldSize.x / Mathf.Max(Mathf.Abs(lossy.x), 1e-4f),
+            worldSize.y / Mathf.Max(Mathf.Abs(lossy.y), 1e-4f),
+            worldSize.z / Mathf.Max(Mathf.Abs(lossy.z), 1e-4f));
+    }
+
+    private static void ApplyCapsuleScale(Transform reveal, CapsuleCollider capsule)
+    {
+        float diameter = capsule.radius * 2f;
+        float height = Mathf.Max(capsule.height, diameter);
+
+        // Unity capsule primitive: height 2, diameter 1 at unit scale.
+        switch (capsule.direction)
+        {
+            case 0:
+                reveal.localScale = new Vector3(height * 0.5f, diameter, diameter);
+                break;
+            case 2:
+                reveal.localScale = new Vector3(diameter, diameter, height * 0.5f);
+                break;
+            default:
+                reveal.localScale = new Vector3(diameter, height * 0.5f, diameter);
+                break;
+        }
+    }
+}

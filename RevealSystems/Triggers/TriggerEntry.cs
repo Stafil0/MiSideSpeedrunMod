@@ -2,7 +2,7 @@ using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SpeedrunMod.RevealSystems;
+namespace SpeedrunMod.RevealSystems.Triggers;
 
 internal sealed class TriggerEntry
 {
