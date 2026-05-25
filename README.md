@@ -30,14 +30,25 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
 
 ## Trigger reveal (hitboxes)
 Press `Alt + O` in-game to toggle visible trigger volumes.  
-Each trigger type is drawn with a color-coded shape that matches its real bounds when possible (colliders, distance spheres, `Trigger_Event` overlap boxes).
+Each trigger type is drawn with a color-coded shape that matches its real bounds when possible.
 If no size can be resolved, a default cube is shown and the label is marked `[default cube]`.  
 Volumes stay visible across scene loads while the toggle is on.
 
 ## Collider reveal (physics hitboxes)
 Press `Alt + H` in-game to toggle visible physics collider volumes.  
-Draws enabled non-trigger colliders on box, sphere, and capsule types, plus trigger colliders (except `Trigger_*` script volumes).
+Draws enabled non-trigger colliders on box, sphere, and capsule types.
 Volumes stay visible across scene loads while the toggle is on.
+
+## Interactable reveal
+Press `Alt + I` in-game to toggle visible interactable volumes.  
+Each volume is recoloured every frame to show its current interaction state relative to the player:
+
+- **Purple** — out of range.
+- **Blue** — within reach on the ground plane (the game would accept an interaction at this distance).
+- **Yellow** — aimed at but not yet interactable.
+- **Green** — the game has locked onto it; the interact prompt will fire.
+
+Labels show the live floor distance to the object.
 
 ## Fixes
 - When pressing the start with a clean slate button the achievements will also be reset if this mod is enabled.
@@ -59,6 +70,11 @@ Volumes stay visible across scene loads while the toggle is on.
     <td>Alt + H</td>
     <td>Toggle collider reveal</td>
     <td>In-game: show or hide color-coded physics collider volumes. See Collider reveal (physics hitboxes).</td>
+  </tr>
+  <tr>
+    <td>Alt + I</td>
+    <td>Toggle interactable reveal</td>
+    <td>In-game: show or hide interactable volumes with state colour-coding (purple/blue/yellow/green). See Interactable reveal.</td>
   </tr>
   <tr>
     <td>Alt + L</td>
