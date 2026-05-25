@@ -8,7 +8,7 @@ namespace SpeedrunMod.RevealSystems;
 
 internal static class Triggers
 {
-    private static readonly Dictionary<int, TriggerEntry> Entries = new Dictionary<int, TriggerEntry>();
+    private static readonly Dictionary<int, TriggerEntry> Entries = new();
     private static bool _isRevealing;
     private static readonly int Color = Shader.PropertyToID("_Color");
     private static readonly int Mode = Shader.PropertyToID("_Mode");
@@ -146,7 +146,7 @@ internal static class Triggers
 
         Plugin.Log.LogWarning($"[Triggers] {name} could not create shape from trigger logic");
 
-        shape = CreateDefaultRevealCube(trigger.transform);
+        shape = CreateDefaultRevealCube(trigger);
 
         Plugin.Log.LogWarning($"[Triggers] {name} using 1x1 default cube");
 
@@ -373,11 +373,12 @@ internal static class Triggers
         return reveal;
     }
 
-    private static GameObject CreateDefaultRevealCube(Transform parent)
+    private static GameObject CreateDefaultRevealCube(Component trigger)
     {
+        var transform = trigger.transform;
         GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        reveal.name = FallbackShapePrefix + parent.name;
-        reveal.transform.SetParent(parent, false);
+        reveal.name = FallbackShapePrefix + transform.name;
+        reveal.transform.SetParent(transform, false);
         reveal.transform.localPosition = Vector3.zero;
         reveal.transform.localRotation = Quaternion.identity;
         reveal.transform.localScale = Vector3.one;
@@ -477,9 +478,8 @@ internal static class Triggers
         _isRevealing = false;
         int removed = 0;
         int kept = 0;
-        foreach (KeyValuePair<int, TriggerEntry> pair in Entries.ToList())
+        foreach (var (id, entry) in Entries)
         {
-            TriggerEntry entry = pair.Value;
             if (entry.Shape != null)
             {
                 Object.Destroy(entry.Shape);
@@ -495,7 +495,7 @@ internal static class Triggers
 
             if (!entry.ColliderSize.HasValue)
             {
-                Entries.Remove(pair.Key);
+                Entries.Remove(id);
                 removed++;
             }
             else
