@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,62 +8,377 @@ namespace SpeedrunMod.RevealSystems;
 
 internal static class Triggers
 {
-    private static readonly List<GameObject> GameObjects = new List<GameObject>();
-    private static readonly List<GameObject> Labels = new List<GameObject>();
+    private static readonly Dictionary<int, TriggerEntry> Entries = new Dictionary<int, TriggerEntry>();
     private static bool _isRevealing;
     private static readonly int Color = Shader.PropertyToID("_Color");
     private static readonly int Mode = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
+    private const string FallbackShapePrefix = "RevealDefault_";
+
+    internal static void CacheEventCollider(Trigger_Event trigger, BoxCollider box)
+    {
+        int id = trigger.GetInstanceID();
+        Vector3 half = box.size * 0.5f;
+        Vector3? colliderSize = half.sqrMagnitude > 0f ? half : null;
+
+        if (Entries.TryGetValue(id, out TriggerEntry entry))
+        {
+            if (colliderSize.HasValue)
+            {
+                entry.ColliderSize = colliderSize;
+                Plugin.Log.LogInfo($"[Triggers] Cached event collider half-extents {half} on {entry.Name} (existing entry)");
+            }
+
+            return;
+        }
+
+        entry = new TriggerEntry(trigger, "event", colliderSize: colliderSize);
+        Entries[id] = entry;
+
+        Plugin.Log.LogInfo(colliderSize.HasValue
+            ? $"[Triggers] Cached event collider half-extents {half} on {entry.Name} (new stub)"
+            : $"[Triggers] Cached event stub on {entry.Name} (no collider size, default cube on reveal)");
+    }
+
+    internal static void ClearEntries()
+    {
+        int count = Entries.Count;
+        Entries.Clear();
+        Plugin.Log.LogInfo($"[Triggers] ClearEntries removed {count} entries");
+    }
 
     internal static void RevealTriggers()
     {
         HideTriggers();
         _isRevealing = true;
 
-        ProcessTriggers<Trigger_DistanceCamera>("distancecamera");
-        ProcessTriggers<Trigger_DistanceCheck>("distancecheck");
-        ProcessTriggers<Trigger_DistanceCircle>("distancecircle");
-        ProcessTriggers<Trigger_Event>("event");
-        ProcessTriggers<Trigger_MouseClick>("mouseclick");
-        ProcessTriggers<Trigger_MouseEvent>("mouseevent");
-        ProcessTriggers<Trigger_Teleport>("teleport");
-        ProcessTriggers<Trigger_Zoom>("zoom");
+        int count = 0;
+        count += ProcessTriggers<Trigger_DistanceCamera>("distancecamera");
+        count += ProcessTriggers<Trigger_DistanceCheck>("distancecheck");
+        count += ProcessTriggers<Trigger_DistanceCircle>("distancecircle");
+        count += ProcessTriggers<Trigger_Event>("event");
+        count += ProcessTriggers<Trigger_MouseClick>("mouseclick");
+        count += ProcessTriggers<Trigger_MouseEvent>("mouseevent");
+        count += ProcessTriggers<Trigger_Teleport>("teleport");
+        count += ProcessTriggers<Trigger_Zoom>("zoom");
+
+        Plugin.Log.LogInfo($"[Triggers] RevealTriggers drew {count} triggers ({Entries.Count} entries in dictionary)");
     }
 
-    private static void ProcessTriggers<T>(string type) where T : Component
+    private static int ProcessTriggers<T>(string type) where T : Component
     {
         var objects = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var obj in objects)
         {
-            GameObject gameObject = obj.gameObject;
-            AddTriggerRevealer(gameObject, type);
+            AddTriggerRevealer(obj, type);
+        }
+
+        if (objects.Length > 0)
+        {
+            Plugin.Log.LogInfo($"[Triggers] ProcessTriggers<{typeof(T).Name}> type={type} count={objects.Length}");
+        }
+
+        return objects.Length;
+    }
+
+    private static void AddTriggerRevealer(Component trigger, string type)
+    {
+        GameObject gameObject = trigger.gameObject;
+        bool hasShape = TryCreateRevealShape(trigger, out GameObject newObject);
+
+        GameObject canvasGUI = CreateCanvas(gameObject);
+        Text label = CreateTextUI(canvasGUI, type, gameObject.name);
+
+        var revealCollider = newObject.GetComponent<Collider>();
+        if (revealCollider != null)
+        {
+            revealCollider.enabled = false;
+        }
+
+        int id = trigger.GetInstanceID();
+        Vector3? colliderSize = trigger is Trigger_Event triggerEvent ? ResolveColliderSize(triggerEvent, id) : null;
+
+        bool created = false;
+        if (!Entries.TryGetValue(id, out TriggerEntry entry))
+        {
+            entry = new TriggerEntry(trigger, type, colliderSize: colliderSize);
+            Entries[id] = entry;
+            created = true;
+        }
+        else if (!entry.ColliderSize.HasValue && colliderSize.HasValue)
+        {
+            entry.ColliderSize = colliderSize;
+        }
+
+        entry.Source = trigger;
+        entry.Type = type;
+        entry.Shape = newObject;
+        entry.HasShape = hasShape;
+        entry.Label = label;
+
+        ApplyRevealStyle(entry);
+
+        Plugin.Log.LogInfo(
+            $"[Triggers] Reveal {entry.Name} type={type} created={created} hasShape={entry.HasShape} " +
+            $"cachedHalf={(entry.ColliderSize.HasValue ? entry.ColliderSize.Value.ToString() : "none")} shape={newObject.name}");
+    }
+
+    private static bool TryCreateRevealShape(Component trigger, out GameObject shape)
+    {
+        shape = null;
+        var name = trigger.GetName();
+
+        if (TryCreateFromCollider(trigger, out shape))
+        {
+            return true;
+        }
+
+        Plugin.Log.LogWarning($"[Triggers] {name} could not create shape from collider");
+
+        if (TryCreateFromTriggerLogic(trigger, out shape))
+        {
+            return true;
+        }
+
+        Plugin.Log.LogWarning($"[Triggers] {name} could not create shape from trigger logic");
+
+        shape = CreateDefaultRevealCube(trigger.transform);
+
+        Plugin.Log.LogWarning($"[Triggers] {name} using 1x1 default cube");
+
+        return false;
+    }
+
+    private static bool TryCreateFromCollider(Component trigger, out GameObject reveal)
+    {
+        reveal = null;
+        var name = trigger.GetName();
+        Collider collider = FindBestCollider(trigger.gameObject);
+        if (collider == null)
+        {
+            Plugin.Log.LogDebug($"[Triggers] {name} volume: no collider");
+            return false;
+        }
+
+        reveal = CreatePrimitiveForCollider(collider);
+        if (reveal == null)
+        {
+            return false;
+        }
+
+        reveal.name = "Reveal_" + trigger.gameObject.name;
+        ApplyColliderTransform(reveal.transform, collider);
+
+        Plugin.Log.LogDebug(
+            $"[Triggers] {name} volume=collider {collider.GetName()} " +
+            $"isTrigger={collider.isTrigger} scale={reveal.transform.localScale}");
+        return true;
+    }
+
+    private static Collider FindBestCollider(GameObject root)
+    {
+        Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+        Collider best = null;
+        float bestScore = 0f;
+
+        foreach (Collider collider in colliders)
+        {
+            if (collider is MeshCollider meshCollider && !meshCollider.convex)
+            {
+                continue;
+            }
+
+            Vector3 size = collider.bounds.size;
+            float score = size.x * size.y * size.z;
+            if (collider.isTrigger)
+            {
+                score *= 2f;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = collider;
+            }
+        }
+
+        return best;
+    }
+
+    private static GameObject CreatePrimitiveForCollider(Collider collider)
+    {
+        return collider switch
+        {
+            BoxCollider => GameObject.CreatePrimitive(PrimitiveType.Cube),
+            SphereCollider => GameObject.CreatePrimitive(PrimitiveType.Sphere),
+            CapsuleCollider => GameObject.CreatePrimitive(PrimitiveType.Capsule),
+            _ => GameObject.CreatePrimitive(PrimitiveType.Cube)
+        };
+    }
+
+    private static void ApplyColliderTransform(Transform reveal, Collider collider)
+    {
+        reveal.SetParent(collider.transform, false);
+        reveal.localRotation = Quaternion.identity;
+
+        switch (collider)
+        {
+            case BoxCollider box:
+                reveal.localPosition = box.center;
+                reveal.localScale = box.size;
+                break;
+
+            case SphereCollider sphere:
+                reveal.localPosition = sphere.center;
+                reveal.localScale = Vector3.one * (sphere.radius * 2f);
+                break;
+
+            case CapsuleCollider capsule:
+                reveal.localPosition = capsule.center;
+                ApplyCapsuleScale(reveal, capsule);
+                break;
+
+            default:
+                Bounds bounds = collider.bounds;
+                reveal.SetParent(collider.transform.parent != null ? collider.transform.parent : collider.transform, true);
+                reveal.position = bounds.center;
+                reveal.rotation = collider.transform.rotation;
+                reveal.localScale = bounds.size;
+                break;
         }
     }
 
-    private static void AddTriggerRevealer(GameObject gameObject, string type)
+    private static void ApplyCapsuleScale(Transform reveal, CapsuleCollider capsule)
     {
-        // Create a new primitive cube for visualization
-        GameObject newObject = CreateRevealCube(gameObject);
+        // Unity capsule primitive: height 2 (Y), radius 0.5 on X/Z for direction Y.
+        float diameter = capsule.radius * 2f;
+        float height = Mathf.Max(capsule.height, diameter);
 
-        // Create and configure a canvas and text for display
-        GameObject canvasGUI = CreateCanvas(gameObject);
-        CreateTextUI(canvasGUI, type, gameObject.name);
-
-        SetMaterialForObject(newObject, type);
-        newObject.GetComponent<BoxCollider>().enabled = false;
-
-        //Add the objects to the collections
-        GameObjects.Add(newObject);
-        Labels.Add(canvasGUI);
+        switch (capsule.direction)
+        {
+            case 0: // X
+                reveal.localScale = new Vector3(height * 0.5f, diameter * 0.5f, diameter * 0.5f);
+                break;
+            case 2: // Z
+                reveal.localScale = new Vector3(diameter * 0.5f, diameter * 0.5f, height * 0.5f);
+                break;
+            default: // Y
+                reveal.localScale = new Vector3(diameter * 0.5f, height * 0.5f, diameter * 0.5f);
+                break;
+        }
     }
 
-    private static GameObject CreateRevealCube(GameObject parent)
+    private static bool TryCreateFromTriggerLogic(Component trigger, out GameObject reveal)
     {
-        GameObject newObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        newObject.transform.SetParent(parent.transform, false);
-        newObject.name = "RevealBox" + parent.name;
-        return newObject;
+        reveal = null;
+        var name = trigger.GetName();
+
+        switch (trigger)
+        {
+            case Trigger_Event triggerEvent:
+                if (TryGetTriggerEventVolume(triggerEvent, out Vector3 halfExtents))
+                {
+                    Vector3 size = halfExtents * 2f;
+                    reveal = CreateBoxVolume(triggerEvent.transform, size, Vector3.zero);
+                    Plugin.Log.LogDebug($"[Triggers] {name} volume=event OverlapBox size={size} half={halfExtents}");
+                    return true;
+                }
+
+                return false;
+
+            case Trigger_DistanceCircle circle:
+                reveal = CreateSphereVolume(circle.transform, circle.radius, Vector3.zero);
+                Plugin.Log.LogDebug($"[Triggers] {name} volume=distancecircle radius={circle.radius}");
+                return true;
+
+            case Trigger_DistanceCamera cameraTrigger:
+                reveal = CreateSphereVolume(cameraTrigger.transform, cameraTrigger.distance, Vector3.zero);
+                Plugin.Log.LogDebug($"[Triggers] {name} volume=distancecamera distance={cameraTrigger.distance}");
+                return true;
+
+            case Trigger_Zoom zoom:
+                reveal = CreateSphereVolume(zoom.transform, zoom.distance, Vector3.zero);
+                Plugin.Log.LogDebug($"[Triggers] {name} volume=zoom distance={zoom.distance}");
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private static Vector3? ResolveColliderSize(Trigger_Event triggerEvent, int id)
+    {
+        var name = triggerEvent.GetName();
+        BoxCollider box = triggerEvent.GetComponent<BoxCollider>();
+        if (box != null)
+        {
+            Vector3 half = box.size * 0.5f;
+            if (half.sqrMagnitude > 0f)
+            {
+                Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize from live BoxCollider half={half}");
+                return half;
+            }
+
+            Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize BoxCollider has zero size");
+            return null;
+        }
+
+        if (Entries.TryGetValue(id, out TriggerEntry entry) && entry.ColliderSize.HasValue)
+        {
+            Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize from cached half={entry.ColliderSize.Value}");
+            return entry.ColliderSize;
+        }
+
+        Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize no live collider and no cache");
+        return null;
+    }
+
+    private static bool TryGetTriggerEventVolume(Trigger_Event triggerEvent, out Vector3 halfExtents)
+    {
+        Vector3? resolved = ResolveColliderSize(triggerEvent, triggerEvent.GetInstanceID());
+        if (resolved.HasValue)
+        {
+            halfExtents = resolved.Value;
+            return true;
+        }
+
+        halfExtents = Vector3.zero;
+        return false;
+    }
+
+    private static GameObject CreateBoxVolume(Transform parent, Vector3 size, Vector3 localCenter)
+    {
+        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        reveal.name = "Reveal_" + parent.name;
+        reveal.transform.SetParent(parent, false);
+        reveal.transform.localPosition = localCenter;
+        reveal.transform.localRotation = Quaternion.identity;
+        reveal.transform.localScale = size;
+        return reveal;
+    }
+
+    private static GameObject CreateSphereVolume(Transform parent, float radius, Vector3 localCenter)
+    {
+        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        reveal.name = "Reveal_" + parent.name;
+        reveal.transform.SetParent(parent, false);
+        reveal.transform.localPosition = localCenter;
+        reveal.transform.localRotation = Quaternion.identity;
+        float diameter = Mathf.Max(radius * 2f, 0.05f);
+        reveal.transform.localScale = new Vector3(diameter, diameter, diameter);
+        return reveal;
+    }
+
+    private static GameObject CreateDefaultRevealCube(Transform parent)
+    {
+        GameObject reveal = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        reveal.name = FallbackShapePrefix + parent.name;
+        reveal.transform.SetParent(parent, false);
+        reveal.transform.localPosition = Vector3.zero;
+        reveal.transform.localRotation = Quaternion.identity;
+        reveal.transform.localScale = Vector3.one;
+        return reveal;
     }
 
     private static GameObject CreateCanvas(GameObject parent)
@@ -78,7 +394,7 @@ internal static class Triggers
         return canvasGUI;
     }
 
-    private static GameObject CreateTextUI(GameObject parent, string type, string name)
+    private static Text CreateTextUI(GameObject parent, string type, string name)
     {
         GameObject textGUI = new GameObject("Text " + parent.name);
         textGUI.transform.SetParent(parent.transform, false);
@@ -89,81 +405,133 @@ internal static class Triggers
         text.verticalOverflow = VerticalWrapMode.Overflow;
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         text.alignment = TextAnchor.MiddleCenter;
-        text.color = GetColorForTrigger(type);
-        text.color = new Color(text.color.r, text.color.g, text.color.b, 1f);
 
-        // Adjust the position, scale, and rotation
         text.rectTransform.localPosition = Vector3.zero;
         text.rectTransform.localScale = new Vector3(0.3f, 0.3f, 1);
-        text.rectTransform.rotation = Quaternion.Euler(0, 180, 0); 
-        return textGUI;
+        text.rectTransform.localRotation = Quaternion.identity;
+        return text;
     }
 
-    private static void SetMaterialForObject(GameObject newObject, string type)
+    private static void ApplyRevealStyle(TriggerEntry entry)
     {
-        MeshRenderer meshRenderer = newObject.GetComponent<MeshRenderer>();
+        ApplyMaterial(entry.Shape, entry.Type);
+
+        if (entry.Label != null && entry.Source != null)
+        {
+            Color labelColor = GetColorForTrigger(entry.Type);
+            entry.Label.color = new Color(labelColor.r, labelColor.g, labelColor.b, 1f);
+            string objectName = entry.Source.gameObject.name;
+            if (!entry.HasShape)
+            {
+                objectName += " [default cube]";
+            }
+
+            entry.Label.text = entry.Type + " : " + objectName;
+        }
+    }
+
+    private static void ApplyMaterial(GameObject volume, string type)
+    {
+        if (volume == null)
+        {
+            return;
+        }
+
+        MeshRenderer meshRenderer = volume.GetComponent<MeshRenderer>();
+        if (meshRenderer == null)
+        {
+            return;
+        }
+
         Material mat = new Material(Shader.Find("Standard"));
-
-        mat.SetColor(Color, GetColorForTrigger(type));
-        mat.SetColor("_EmissionColor", mat.color);
+        Color baseColor = GetColorForTrigger(type);
+        mat.SetColor(Color, baseColor);
+        mat.SetColor("_EmissionColor", baseColor);
         mat.EnableKeyword("_EMISSION");
-
         mat.SetFloat(Mode, 3);
         mat.SetInt(SrcBlend, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         mat.SetInt(DstBlend, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
         mat.EnableKeyword("_ALPHABLEND_ON");
         mat.renderQueue = 3000;
-        //This fucking sucks, please help me
-        //Some objects hide even the labels. It seems to be inconsistent and I can't for the life of me make it work
-        //Perhaps implementing a brand-new shader to make it so we on't have to go through all these hoops.
-        //newObject.layer = LayerMask.NameToLayer(LayerMask.LayerToName(10));
         meshRenderer.material = mat;
     }
 
-    private static Color GetColorForTrigger(string type)
+    private static Color GetColorForTrigger(string type) => type switch
     {
-        switch (type)
-        {
-            case "distancecamera": return new Color(0.98f, 0.0f, 0.0f, .2f);
-            case "distancecheck": return new Color(1f, 0.4f, 0.0f, .2f);
-            case "distancecircle": return new Color(0.0f, 0.2f, 0.98f, .2f);
-            case "event": return new Color(0.0f, 0.97f, 0.0f, .2f);
-            case "mouseclick": return new Color(0.3f, 1f, 1f, .2f);
-            case "mouseevent": return new Color(0.9f, 0.9f, 0.0f, .2f);
-            case "teleport": return new Color(0.9f, 0.2f, 0.7f, .2f);
-            case "zoom": return new Color(0.8f, 0.8f, 0.8f, .2f);
-            default: return new Color(1f, 1f, 1f, .2f);
-        }
-    }
+        "distancecamera" => new Color(0.98f, 0.0f, 0.0f, .2f),
+        "distancecheck" => new Color(1f, 0.4f, 0.0f, .2f),
+        "distancecircle" => new Color(0.0f, 0.2f, 0.98f, .2f),
+        "event" => new Color(0.0f, 0.97f, 0.0f, .2f),
+        "mouseclick" => new Color(0.3f, 1f, 1f, .2f),
+        "mouseevent" => new Color(0.9f, 0.9f, 0.0f, .2f),
+        "teleport" => new Color(0.9f, 0.2f, 0.7f, .2f),
+        "zoom" => new Color(0.8f, 0.8f, 0.8f, .2f),
+        _ => new Color(1f, 1f, 1f, .2f)
+    };
 
     internal static void HideTriggers()
-    { 
+    {
         _isRevealing = false;
-        foreach (GameObject gameObject in GameObjects.Where(gameObject => gameObject != null))
+        int removed = 0;
+        int kept = 0;
+        foreach (KeyValuePair<int, TriggerEntry> pair in Entries.ToList())
         {
-            Object.Destroy(gameObject);
+            TriggerEntry entry = pair.Value;
+            if (entry.Shape != null)
+            {
+                Object.Destroy(entry.Shape);
+                entry.Shape = null;
+                entry.HasShape = false;
+            }
+
+            if (entry.Label != null)
+            {
+                Object.Destroy(entry.Label.gameObject.transform.parent.gameObject);
+                entry.Label = null;
+            }
+
+            if (!entry.ColliderSize.HasValue)
+            {
+                Entries.Remove(pair.Key);
+                removed++;
+            }
+            else
+            {
+                kept++;
+            }
         }
 
-        foreach (GameObject gameObject in Labels.Where(gameObject => gameObject != null))
-        {
-            Object.Destroy(gameObject);
-        }
-
-        GameObjects.Clear();
-        Labels.Clear();
-        }
+        Plugin.Log.LogInfo($"[Triggers] HideTriggers removed {removed} entries, kept {kept} stubs");
+    }
 
     public static bool IsRevealing()
-    { 
+    {
         return _isRevealing;
     }
 
     internal static void Update()
     {
-        if (!_isRevealing) return;
-        foreach (var label in Labels.Where(label => label != null && label.transform != null && Camera.main != null))
+        if (!_isRevealing)
         {
-            label.transform.LookAt(Camera.main.transform);
+            return;
+        }
+
+        Camera cam = Camera.main;
+        foreach (TriggerEntry entry in Entries.Values)
+        {
+            if (entry.Source == null || entry.Shape == null)
+            {
+                continue;
+            }
+
+            if (entry.Label != null && cam != null)
+            {
+                Transform canvas = entry.Label.transform.parent;
+                if (canvas != null)
+                {
+                    canvas.LookAt(2f * canvas.position - cam.transform.position, cam.transform.up);
+                }
+            }
         }
     }
 }

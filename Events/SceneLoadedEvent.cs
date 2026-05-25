@@ -32,6 +32,7 @@ internal static class SceneLoadedEvent
         
         if (Triggers.IsRevealing())
         {
+            Triggers.ClearEntries(); 
             Plugin.Log.LogInfo("Revealing newly loaded triggers");
             Triggers.RevealTriggers();
         }
