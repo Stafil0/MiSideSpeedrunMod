@@ -28,6 +28,13 @@ The mod also shows periodic refresh-rate notifications in-game.
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Overlay` to configure and inspect the debug overlay.  
 By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
 
+## Trigger reveal (hitboxes)
+Press `Alt + O` in-game to toggle visible trigger volumes.  
+Each trigger type is drawn with a color-coded shape that matches its real bounds when possible (colliders, distance spheres, `Trigger_Event` overlap boxes).  
+`Trigger_Event` collider sizes are cached on `Start` before the game removes the box collider, so event triggers still show the correct volume after that.  
+If no size can be resolved, a default cube is shown and the label is marked `[default cube]`.  
+Volumes stay visible across scene loads while the toggle is on.
+
 ## Fixes
 - When pressing the start with a clean slate button the achievements will also be reset if this mod is enabled.
 - When toggling `skipdialogue` the mod will remember the state of this toggle. Meaning when you restart the game you will keep this toggle in the state that you had before you quit the game.
@@ -41,8 +48,8 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
   </tr>
   <tr>
     <td>Alt + O</td>
-    <td>Toggle Triggers</td>
-    <td>This toggle will change whether or not you can see in game triggers.</td>
+    <td>Toggle trigger reveal</td>
+    <td>In-game: show or hide color-coded trigger hitbox volumes. See Trigger reveal (hitboxes).</td>
   </tr>
   <tr>
     <td>Alt + L</td>
