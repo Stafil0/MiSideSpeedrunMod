@@ -27,17 +27,18 @@ internal static class Triggers
             if (colliderSize.HasValue)
             {
                 entry.ColliderSize = colliderSize;
-                Plugin.Log.LogInfo($"[Triggers] Cached event collider half-extents {half} on {entry.Name} (existing entry)");
+                entry.ColliderCenter = box.center;
+                Plugin.Log.LogInfo($"[Triggers] Cached event box half={half} center={box.center} on {entry.Name} (existing entry)");
             }
 
             return;
         }
 
-        entry = new TriggerEntry(trigger, "event", colliderSize: colliderSize);
+        entry = new TriggerEntry(trigger, "event", colliderSize: colliderSize, colliderCenter: colliderSize.HasValue ? box.center : null);
         Entries[id] = entry;
 
         Plugin.Log.LogInfo(colliderSize.HasValue
-            ? $"[Triggers] Cached event collider half-extents {half} on {entry.Name} (new stub)"
+            ? $"[Triggers] Cached event box half={half} center={box.center} on {entry.Name} (new stub)"
             : $"[Triggers] Cached event stub on {entry.Name} (no collider size, default cube on reveal)");
     }
 
@@ -96,19 +97,12 @@ internal static class Triggers
             revealCollider.enabled = false;
         }
 
-        int id = trigger.GetInstanceID();
-        Vector3? colliderSize = trigger is Trigger_Event triggerEvent ? ResolveColliderSize(triggerEvent, id) : null;
-
-        bool created = false;
-        if (!Entries.TryGetValue(id, out TriggerEntry entry))
+        var id = trigger.GetInstanceID();
+        var entry = new TriggerEntry(trigger, type);
+        if (TryGetTriggerEventBox(trigger, out Vector3 halfExtents, out Vector3 localCenter))
         {
-            entry = new TriggerEntry(trigger, type, colliderSize: colliderSize);
-            Entries[id] = entry;
-            created = true;
-        }
-        else if (!entry.ColliderSize.HasValue && colliderSize.HasValue)
-        {
-            entry.ColliderSize = colliderSize;
+            entry.ColliderSize = halfExtents;
+            entry.ColliderCenter = localCenter;
         }
 
         entry.Source = trigger;
@@ -119,8 +113,10 @@ internal static class Triggers
 
         ApplyRevealStyle(entry);
 
+        Entries[id] = entry;
+
         Plugin.Log.LogInfo(
-            $"[Triggers] Reveal {entry.Name} type={type} created={created} hasShape={entry.HasShape} " +
+            $"[Triggers] Reveal {entry.Name} type={type} hasShape={entry.HasShape} " +
             $"cachedHalf={(entry.ColliderSize.HasValue ? entry.ColliderSize.Value.ToString() : "none")} shape={newObject.name}");
     }
 
@@ -128,6 +124,13 @@ internal static class Triggers
     {
         shape = null;
         var name = trigger.GetName();
+
+        if (TryCreateEventReveal(trigger, out shape))
+        {
+            return true;
+        }
+
+        Plugin.Log.LogWarning($"[Triggers] {name} could not create shape from event");
 
         if (TryCreateFromCollider(trigger, out shape))
         {
@@ -150,11 +153,23 @@ internal static class Triggers
         return false;
     }
 
+    private static bool TryCreateEventReveal(Component trigger, out GameObject reveal)
+    {
+        reveal = null;
+        if (!TryGetTriggerEventBox(trigger, out Vector3 halfExtents, out Vector3 localCenter))
+        {
+            return false;
+        }
+
+        reveal = CreateBoxVolume(trigger.transform, halfExtents * 2f, localCenter);
+        return true;
+    }
+
     private static bool TryCreateFromCollider(Component trigger, out GameObject reveal)
     {
         reveal = null;
         var name = trigger.GetName();
-        Collider collider = FindBestCollider(trigger.gameObject);
+        Collider collider = FindBestCollider(trigger);
         if (collider == null)
         {
             Plugin.Log.LogDebug($"[Triggers] {name} volume: no collider");
@@ -173,29 +188,29 @@ internal static class Triggers
         Plugin.Log.LogDebug(
             $"[Triggers] {name} volume=collider {collider.GetName()} " +
             $"isTrigger={collider.isTrigger} scale={reveal.transform.localScale}");
+        
         return true;
     }
 
-    private static Collider FindBestCollider(GameObject root)
+    private static Collider FindBestCollider(Component trigger)
     {
-        Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+        if (trigger is Trigger_Event)
+        {
+            return null;
+        }
+
+        Collider[] colliders = trigger.GetComponentsInChildren<Collider>(true);
         Collider best = null;
         float bestScore = 0f;
 
         foreach (Collider collider in colliders)
         {
-            if (collider is MeshCollider meshCollider && !meshCollider.convex)
+            if (collider is MeshCollider { convex: false })
             {
                 continue;
             }
 
-            Vector3 size = collider.bounds.size;
-            float score = size.x * size.y * size.z;
-            if (collider.isTrigger)
-            {
-                score *= 2f;
-            }
-
+            float score = collider.bounds.size.sqrMagnitude;
             if (score > bestScore)
             {
                 bestScore = score;
@@ -276,17 +291,6 @@ internal static class Triggers
 
         switch (trigger)
         {
-            case Trigger_Event triggerEvent:
-                if (TryGetTriggerEventVolume(triggerEvent, out Vector3 halfExtents))
-                {
-                    Vector3 size = halfExtents * 2f;
-                    reveal = CreateBoxVolume(triggerEvent.transform, size, Vector3.zero);
-                    Plugin.Log.LogDebug($"[Triggers] {name} volume=event OverlapBox size={size} half={halfExtents}");
-                    return true;
-                }
-
-                return false;
-
             case Trigger_DistanceCircle circle:
                 reveal = CreateSphereVolume(circle.transform, circle.radius, Vector3.zero);
                 Plugin.Log.LogDebug($"[Triggers] {name} volume=distancecircle radius={circle.radius}");
@@ -307,43 +311,42 @@ internal static class Triggers
         }
     }
 
-    private static Vector3? ResolveColliderSize(Trigger_Event triggerEvent, int id)
+    private static bool TryGetTriggerEventBox(Component trigger, out Vector3 halfExtents, out Vector3 localCenter)
     {
-        var name = triggerEvent.GetName();
+        if (trigger is not Trigger_Event triggerEvent)
+        {
+            halfExtents = Vector3.zero;
+            localCenter = Vector3.zero;
+            return false;
+        }
+
+        return TryGetTriggerEventBox(triggerEvent, out halfExtents, out localCenter);
+    }
+
+    private static bool TryGetTriggerEventBox(Trigger_Event triggerEvent, out Vector3 halfExtents, out Vector3 localCenter)
+    {
+        int id = triggerEvent.GetInstanceID();
+
+        if (Entries.TryGetValue(id, out TriggerEntry entry))
+        {
+            if (entry.ColliderSize.HasValue && entry.ColliderCenter.HasValue)
+            {
+                halfExtents = entry.ColliderSize.Value;
+                localCenter = entry.ColliderCenter.Value;
+                return true;
+            }
+        }
+
         BoxCollider box = triggerEvent.GetComponent<BoxCollider>();
         if (box != null)
         {
-            Vector3 half = box.size * 0.5f;
-            if (half.sqrMagnitude > 0f)
-            {
-                Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize from live BoxCollider half={half}");
-                return half;
-            }
-
-            Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize BoxCollider has zero size");
-            return null;
-        }
-
-        if (Entries.TryGetValue(id, out TriggerEntry entry) && entry.ColliderSize.HasValue)
-        {
-            Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize from cached half={entry.ColliderSize.Value}");
-            return entry.ColliderSize;
-        }
-
-        Plugin.Log.LogDebug($"[Triggers] {name} ResolveColliderSize no live collider and no cache");
-        return null;
-    }
-
-    private static bool TryGetTriggerEventVolume(Trigger_Event triggerEvent, out Vector3 halfExtents)
-    {
-        Vector3? resolved = ResolveColliderSize(triggerEvent, triggerEvent.GetInstanceID());
-        if (resolved.HasValue)
-        {
-            halfExtents = resolved.Value;
-            return true;
+            halfExtents = box.size * 0.5f;
+            localCenter = box.center;
+            return halfExtents.sqrMagnitude > 0f;
         }
 
         halfExtents = Vector3.zero;
+        localCenter = Vector3.zero;
         return false;
     }
 

@@ -24,13 +24,15 @@ internal sealed class TriggerEntry
     internal string Type { get; set; }
     internal string Name { get; private set; }
     internal Vector3? ColliderSize { get; set; }
+    internal Vector3? ColliderCenter { get; set; }
 
-    internal TriggerEntry(Component source, string type, GameObject shape = null, Text label = null, Vector3? colliderSize = null)
+    internal TriggerEntry(Component source, string type, GameObject shape = null, Text label = null, Vector3? colliderSize = null, Vector3? colliderCenter = null)
     {
         Source = source;
         Type = type;
         Shape = shape;
         Label = label;
         ColliderSize = colliderSize;
+        ColliderCenter = colliderCenter;
     }
 }
