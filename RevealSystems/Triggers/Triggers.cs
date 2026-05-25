@@ -57,7 +57,10 @@ internal static class Triggers
         ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
 
-        Plugin.Log.LogInfo($"[Triggers] ClearEntries removed {count} entries");
+        if (count > 0)
+        {
+            Plugin.Log.LogInfo($"[Triggers] ClearEntries removed {count} entries");
+        }
     }
 
     internal static void Hide()
@@ -391,12 +394,12 @@ internal static class Triggers
 
     private static Color GetColorForTrigger(string type) => type switch
     {
-        "distancecamera" => new Color(0.98f, 0.0f, 0.0f, .2f),
-        "distancecheck" => new Color(1f, 0.4f, 0.0f, .2f),
-        "distancecircle" => new Color(0.0f, 0.2f, 0.98f, .2f),
-        "event" => new Color(0.0f, 0.97f, 0.0f, .2f),
-        "mouseclick" => new Color(0.3f, 1f, 1f, .2f),
-        "mouseevent" => new Color(0.9f, 0.9f, 0.0f, .2f),
+        "distancecamera" => new Color(0.95f, 0.1f, 0.1f, .2f),
+        "distancecheck" => new Color(0.0f, 0.7f, 0.65f, .2f),
+        "distancecircle" => new Color(0.15f, 0.25f, 0.95f, .2f),
+        "event" => new Color(0.6f, 0.95f, 0.1f, .2f),
+        "mouseclick" => new Color(0.35f, 0.2f, 0.9f, .2f),
+        "mouseevent" => new Color(0.7f, 0.4f, 0.1f, .2f),
         "teleport" => new Color(0.9f, 0.2f, 0.7f, .2f),
         "zoom" => new Color(0.8f, 0.8f, 0.8f, .2f),
         _ => new Color(1f, 1f, 1f, .2f)

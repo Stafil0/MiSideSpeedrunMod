@@ -14,12 +14,9 @@ internal static class Interactables
     private static float _nextRescanAt;
 
     private static readonly Color OutOfRangeColor = new(0.95f, 0.15f, 1f, 0.5f);
+    private static readonly Color NearbyColor = new(0.45f, 0.65f, 1f, 0.45f);
+    private static readonly Color AimedColor = new(1f, 0.85f, 0.2f, 0.45f);
     private static readonly Color InRangeColor = new(0.25f, 1f, 0.55f, 0.55f);
-    private static readonly Color DiskColor = new(0.35f, 0.75f, 1f, 0.22f);
-
-    private const float DiskHeight = 0.02f;
-
-    private static GameObject _interactionDisk;
 
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int Mode = Shader.PropertyToID("_Mode");
@@ -35,7 +32,6 @@ internal static class Interactables
         _nextRescanAt = Time.realtimeSinceStartup + RescanIntervalSeconds;
 
         int count = ScanColliders();
-        CreateInteractionDisk();
 
         Plugin.Log.LogInfo($"[Interactables] Reveal drew {count} colliders ({Entries.Count} entries)");
     }
@@ -58,13 +54,10 @@ internal static class Interactables
         ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
 
-        if (_interactionDisk != null)
+        if (count > 0)
         {
-            ObjectRegistry.Destroy(_interactionDisk);
-            _interactionDisk = null;
+            Plugin.Log.LogInfo($"[Interactables] Clear removed {count} entries");
         }
-
-        Plugin.Log.LogInfo($"[Interactables] Clear removed {count} entries");
     }
 
     internal static void Update()
@@ -107,8 +100,6 @@ internal static class Interactables
             canvas.LookAt(2f * canvas.position - cam.transform.position, cam.transform.up);
         }
 
-        CreateInteractionDisk();
-        UpdateInteractionDisk(cam, playerMove);
         UpdateInteractionRange(cam, playerMove);
     }
 
@@ -185,7 +176,7 @@ internal static class Interactables
             return false;
         }
 
-        if (!InteractiveUtil.IsInteractable(collider))
+        if (!InteractiveUtil.IsInteractive(collider))
         {
             return false;
         }
@@ -247,39 +238,8 @@ internal static class Interactables
         }
     }
 
-    private static void CreateInteractionDisk()
-    {
-        if (_interactionDisk)
-        {
-            return;
-        }
-
-        _interactionDisk = ObjectRegistry.CreatePrimitive(PrimitiveType.Cylinder, "Reveal_interactable_cast_disk");
-        ColliderUtil.Disable(_interactionDisk);
-
-        ApplyMaterial(_interactionDisk.GetComponent<MeshRenderer>(), DiskColor);
-    }
-
-    private static void UpdateInteractionDisk(Camera camera, PlayerMove playerMove)
-    {
-        if (!_interactionDisk || camera == null)
-        {
-            return;
-        }
-
-        GameObject player = playerMove != null ? playerMove.gameObject : GlobalTag.player;
-        float diskRadius = InteractiveUtil.ResolveInteractionRadius(player);
-        float diameter = diskRadius * 2f;
-
-        _interactionDisk.transform.position = camera.transform.position + camera.transform.forward * (diskRadius * 0.75f);
-        _interactionDisk.transform.rotation = Quaternion.identity;
-        _interactionDisk.transform.localScale = new Vector3(diameter, DiskHeight * 0.5f, diameter);
-    }
-
     private static void UpdateInteractionRange(Camera camera, PlayerMove playerMove)
     {
-        float interactionRange = InteractiveUtil.ResolveInteractionRange(playerMove);
-
         foreach (InteractableEntry entry in Entries.Values)
         {
             if (entry.Source == null)
@@ -287,16 +247,20 @@ internal static class Interactables
                 continue;
             }
 
-            bool inRange = InteractiveUtil.IsInInteractionRange(camera, entry.Source, interactionRange);
-            float distance = InteractiveUtil.ResolveInteractionRange(camera, entry.Source);
+            InteractableState state = ResolveRangeState(camera, entry.Source, playerMove);
 
-            if (entry.InInteractable != inRange)
+            if (entry.State != state)
             {
-                entry.InInteractable = inRange;
-                ApplyMaterial(entry, inRange ? InRangeColor : OutOfRangeColor);
+                entry.State = state;
+                ApplyMaterial(entry, ResolveRangeColor(state));
             }
 
             if (entry.Label == null || string.IsNullOrEmpty(entry.Text))
+            {
+                continue;
+            }
+
+            if (!InteractiveUtil.TryResolveDistance(playerMove, entry.Source, out float distance))
             {
                 continue;
             }
@@ -308,6 +272,34 @@ internal static class Interactables
             }
         }
     }
+
+    private static InteractableState ResolveRangeState(Camera camera, Collider collider, PlayerMove playerMove)
+    {
+        if (InteractiveUtil.IsInRange(collider, playerMove))
+        {
+            return InteractableState.InRange;
+        }
+
+        if (InteractiveUtil.IsAimedAt(camera, collider, playerMove))
+        {
+            return InteractableState.Aimed;
+        }
+
+        if (InteractiveUtil.IsWithinReach(collider, playerMove))
+        {
+            return InteractableState.Nearby;
+        }
+
+        return InteractableState.OutOfRange;
+    }
+
+    private static Color ResolveRangeColor(InteractableState rangeState) => rangeState switch
+    {
+        InteractableState.InRange => InRangeColor,
+        InteractableState.Aimed => AimedColor,
+        InteractableState.Nearby => NearbyColor,
+        _ => OutOfRangeColor,
+    };
 
     private static void ApplyMaterial(InteractableEntry entry, Color color)
     {

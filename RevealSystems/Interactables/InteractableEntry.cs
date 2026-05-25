@@ -11,7 +11,7 @@ internal sealed class InteractableEntry
     internal GameObject Shape { get; set; }
     internal Text Label { get; set; }
     internal string Text { get; set; }
-    internal bool? InInteractable { get; set; }
+    internal InteractableState? State { get; set; }
     internal string Name { get; }
 
     internal InteractableEntry(Collider source)

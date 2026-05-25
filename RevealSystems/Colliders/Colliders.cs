@@ -49,7 +49,10 @@ internal static class Colliders
         ObjectRegistry.Clear(Entries.Keys);
         Entries.Clear();
 
-        Plugin.Log.LogInfo($"[Colliders] Clear removed {count} entries");
+        if (count > 0)
+        {
+            Plugin.Log.LogInfo($"[Colliders] Clear removed {count} entries");
+        }
     }
 
     internal static void Update()
@@ -173,7 +176,7 @@ internal static class Colliders
             return false;
         }
 
-        if (InteractiveUtil.IsInteractable(collider))
+        if (InteractiveUtil.IsInteractive(collider))
         {
             return false;
         }
