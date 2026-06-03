@@ -24,16 +24,24 @@ internal static class ColliderUtil
         return reveal;
     }
 
-    internal static Vector3 ResolveLabelPosition(Collider collider, float margin = 0.15f)
+    internal static Vector3 ResolveLabelPosition(Collider collider)
     {
         if (collider == null)
         {
-            return Vector3.up * 0.5f;
+            return Vector3.zero;
         }
 
-        Bounds bounds = collider.bounds;
-        Vector3 worldPos = bounds.center + Vector3.up * (bounds.extents.y + margin);
-        return collider.transform.InverseTransformPoint(worldPos);
+        return ResolveLabelPosition(collider.transform, collider.bounds);
+    }
+
+    internal static Vector3 ResolveLabelPosition(Transform labelParent, Bounds worldBounds)
+    {
+        if (labelParent == null)
+        {
+            return Vector3.zero;
+        }
+
+        return labelParent.InverseTransformPoint(worldBounds.center);
     }
 
     internal static void Disable(GameObject shape)

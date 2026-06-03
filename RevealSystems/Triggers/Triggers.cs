@@ -108,14 +108,6 @@ internal static class Triggers
         GameObject gameObject = trigger.gameObject;
         bool hasShape = TryCreateRevealShape(trigger, out GameObject newObject);
 
-        Transform labelParent = hasShape ? newObject.transform : trigger.transform;
-        GameObject canvasGUI = ObjectRegistry.CreateCanvas(labelParent, hasShape ? 0.55f : 0.5f);
-        
-        Text label = ObjectRegistry.CreateLabel(
-            canvasGUI.transform,
-            $"{type} : {gameObject.name}",
-            GetColorForTrigger(type));
-
         ColliderUtil.Disable(newObject);
 
         var id = trigger.GetInstanceID();
@@ -126,10 +118,16 @@ internal static class Triggers
             entry.ColliderCenter = localCenter;
         }
 
-        entry.Source = trigger;
-        entry.Type = type;
         entry.Shape = newObject;
         entry.HasShape = hasShape;
+
+        GameObject canvasGUI = ObjectRegistry.CreateCanvas(newObject.transform, Vector3.zero);
+
+        Text label = ObjectRegistry.CreateLabel(
+            canvasGUI.transform,
+            $"{type} : {gameObject.name}",
+            GetColorForTrigger(type));
+
         entry.Label = label;
 
         ApplyRevealStyle(entry);
@@ -432,18 +430,20 @@ internal static class Triggers
         Camera cam = Camera.main;
         foreach (TriggerEntry entry in Entries.Values)
         {
-            if (entry.Source == null || entry.Shape == null)
+            if (entry.Source == null)
             {
                 continue;
             }
 
-            if (entry.Label != null && cam != null)
+            if (entry.Shape == null || entry.Label == null || cam == null)
             {
-                Transform canvas = entry.Label.transform.parent;
-                if (canvas != null)
-                {
-                    canvas.LookAt(2f * canvas.position - cam.transform.position, cam.transform.up);
-                }
+                continue;
+            }
+
+            Transform canvas = entry.Label.transform.parent;
+            if (canvas != null)
+            {
+                canvas.LookAt(2f * canvas.position - cam.transform.position, cam.transform.up);
             }
         }
     }
