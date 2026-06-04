@@ -51,7 +51,7 @@ internal static class Colliders
 
         if (count > 0)
         {
-            Plugin.Log.LogInfo($"[Colliders] Clear removed {count} entries");
+            Plugin.Log.LogDebug($"[Colliders] Clear removed {count} entries");
         }
     }
 
@@ -105,6 +105,7 @@ internal static class Colliders
         count += ProcessColliders<BoxCollider>("box");
         count += ProcessColliders<SphereCollider>("sphere");
         count += ProcessColliders<CapsuleCollider>("capsule");
+        count += ProcessColliders<MeshCollider>("mesh");
 
         return count;
     }
@@ -126,14 +127,20 @@ internal static class Colliders
             }
 
             string resolvedType = ResolveType(collider, playerMove, shapeType);
+            string labelText = $"{typeof(T).Name} : {collider.gameObject.name}";
 
             AddRevealer(
                 collider,
                 resolvedType,
                 syncTransform: resolvedType == "player",
-                labelText: $"{typeof(T).Name} : {collider.gameObject.name}");
+                labelText: labelText);
 
             count++;
+        }
+
+        if (count > 0)
+        {
+            Plugin.Log.LogDebug($"[Colliders] scan added {count} {shapeType} colliders of type {typeof(T).Name}");
         }
 
         return count;
@@ -157,11 +164,6 @@ internal static class Colliders
     private static bool ShouldProcess(Collider collider)
     {
         if (collider == null || !collider.enabled)
-        {
-            return false;
-        }
-
-        if (collider is MeshCollider { convex: false })
         {
             return false;
         }
@@ -198,11 +200,6 @@ internal static class Colliders
         GameObject shape = ColliderUtil.CreateShape(collider, $"Reveal_{type}_{collider.gameObject.name}");
         bool hasShape = shape != null;
 
-        if (hasShape)
-        {
-            ObjectRegistry.Register(shape);
-        }
-
         Text labelUi = null;
         if (!string.IsNullOrEmpty(labelText) && hasShape)
         {
@@ -224,6 +221,7 @@ internal static class Colliders
         };
 
         ApplyReveal(entry);
+        RegisterEntry(entry);
         Entries[collider.GetInstanceID()] = entry;
     }
 
@@ -244,8 +242,24 @@ internal static class Colliders
         }
     }
 
+    private static void RegisterEntry(ColliderEntry entry)
+    {
+        if (entry.Shape != null)
+        {
+            ObjectRegistry.Register(entry.Shape);
+        }
+
+        if (entry.Label != null)
+        {
+            ObjectRegistry.Register(entry.Label.transform.parent.gameObject);
+            ObjectRegistry.Register(entry.Label.gameObject);
+        }
+    }
+
     private static void ClearDestroyedEntries()
     {
+        var removed = 0;
+
         foreach (var (id, entry) in Entries)
         {
             if (entry.Source != null)
@@ -255,6 +269,13 @@ internal static class Colliders
 
             DestroyEntry(entry);
             Entries.Remove(id);
+
+            removed++;
+        }
+
+        if (removed > 0)
+        {
+            Plugin.Log.LogDebug($"[Colliders] ClearDestroyedEntries removed {removed} entries");
         }
     }
 
@@ -304,6 +325,7 @@ internal static class Colliders
         "sphere" => new Color(0.9f, 0.4f, 1f, 0.25f),
         "capsule" => new Color(1f, 0.85f, 0.2f, 0.25f),
         "trigger" => new Color(0.2f, 1f, 0.45f, 0.3f),
+        "mesh" => new Color(0.45f, 0.7f, 1f, 0.28f),
         _ => new Color(1f, 1f, 1f, 0.2f)
     };
 }

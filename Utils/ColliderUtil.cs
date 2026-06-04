@@ -60,8 +60,23 @@ internal static class ColliderUtil
             BoxCollider => GameObject.CreatePrimitive(PrimitiveType.Cube),
             SphereCollider => GameObject.CreatePrimitive(PrimitiveType.Sphere),
             CapsuleCollider => GameObject.CreatePrimitive(PrimitiveType.Capsule),
+            MeshCollider mc => CreateMeshReveal(mc),
             _ => GameObject.CreatePrimitive(PrimitiveType.Cube)
         };
+    }
+
+    private static GameObject CreateMeshReveal(MeshCollider meshCollider)
+    {
+        if (meshCollider.sharedMesh == null)
+        {
+            return null;
+        }
+
+        var go = new GameObject();
+        var mf = go.AddComponent<MeshFilter>();
+        mf.sharedMesh = meshCollider.sharedMesh;
+        go.AddComponent<MeshRenderer>();
+        return go;
     }
 
     internal static void ApplyTransform(Transform reveal, Collider collider)
@@ -83,6 +98,13 @@ internal static class ColliderUtil
 
             case CapsuleCollider capsule:
                 ApplyCapsuleTransform(reveal, capsule);
+                break;
+
+            case MeshCollider:
+                reveal.SetParent(collider.transform, false);
+                reveal.localPosition = Vector3.zero;
+                reveal.localRotation = Quaternion.identity;
+                reveal.localScale = Vector3.one;
                 break;
 
             default:

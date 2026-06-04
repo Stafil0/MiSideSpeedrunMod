@@ -151,7 +151,10 @@ internal static class Interactables
             removed++;
         }
 
-        Plugin.Log.LogInfo($"[Interactables] ClearDestroyedEntries removed {removed} entries");
+        if (removed > 0)
+        {
+            Plugin.Log.LogDebug($"[Interactables] ClearDestroyedEntries removed {removed} entries");
+        }
     }
 
     private static bool ShouldProcess(Collider collider)
@@ -194,11 +197,6 @@ internal static class Interactables
         GameObject shape = ColliderUtil.CreateShape(collider, $"Reveal_interactable_{collider.gameObject.name}");
         bool hasShape = shape != null;
 
-        if (hasShape)
-        {
-            ObjectRegistry.Register(shape);
-        }
-
         Text labelUi = null;
         if (!string.IsNullOrEmpty(labelText) && hasShape)
         {
@@ -218,6 +216,7 @@ internal static class Interactables
         };
 
         ApplyMaterial(entry, OutOfRangeColor);
+        RegisterEntry(entry);
         Entries[collider.GetInstanceID()] = entry;
     }
 
@@ -235,6 +234,20 @@ internal static class Interactables
             ObjectRegistry.Destroy(entry.Label.transform.parent.gameObject);
             ObjectRegistry.Destroy(entry.Label.gameObject);
             entry.Label = null;
+        }
+    }
+
+    private static void RegisterEntry(InteractableEntry entry)
+    {
+        if (entry.Shape != null)
+        {
+            ObjectRegistry.Register(entry.Shape);
+        }
+
+        if (entry.Label != null)
+        {
+            ObjectRegistry.Register(entry.Label.transform.parent.gameObject);
+            ObjectRegistry.Register(entry.Label.gameObject);
         }
     }
 
