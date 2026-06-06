@@ -33,6 +33,7 @@ internal class Plugin : BasePlugin
         SceneLoadedEvent.RegisterEvent();
         MenuInitializedEvent.RegisterEvent();
         PauseMenuInitializedEvent.RegisterEvent();
+        
         ChapterSelector.Initialize();
 
         GetVersion().Wait();

@@ -2,6 +2,7 @@ using System;
 using SpeedrunMod.RevealSystems.Colliders;
 using SpeedrunMod.RevealSystems.Interactables;
 using SpeedrunMod.RevealSystems.Triggers;
+using SpeedrunMod.RevealSystems.Visuals;
 using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;
 
@@ -36,6 +37,11 @@ internal static class SceneLoadedEvent
                 Colliders.Hide();
             }
 
+            if (TextureRenderer.IsActive())
+            {
+                TextureRenderer.Disable();
+            }
+
             if (Interactables.IsRevealing())
             {
                 Interactables.Hide();
@@ -54,6 +60,12 @@ internal static class SceneLoadedEvent
             Colliders.Clear();
             Plugin.Log.LogInfo("Revealing newly loaded physics colliders");
             Colliders.Reveal();
+        }
+
+        if (TextureRenderer.IsActive())
+        {
+            Plugin.Log.LogInfo("Re-hiding collider textures in newly loaded scene");
+            TextureRenderer.Enable();
         }
 
         if (Interactables.IsRevealing())

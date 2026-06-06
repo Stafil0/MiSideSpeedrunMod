@@ -56,8 +56,8 @@ internal static class Colliders
 
         _nextRescanAt = Time.realtimeSinceStartup + RescanIntervalSeconds;
 
-        int count = ScanColliders();
-        Plugin.Log.LogInfo($"[Colliders] Reveal mode={_mode}, drew {count} colliders ({Entries.Count} entries)");
+        ScanColliders();
+        Plugin.Log.LogInfo($"[Colliders] Reveal mode={_mode}, drew {Entries.Count} colliders");
     }
 
     internal static void Hide()
@@ -127,28 +127,24 @@ internal static class Colliders
         }
     }
 
-    private static int ScanColliders()
+    private static void ScanColliders()
     {
-        int count = 0;
-
         if (_mode == RevealMode.All || _mode == RevealMode.Primitives)
         {
-            count += ProcessColliders<BoxCollider>("box");
-            count += ProcessColliders<SphereCollider>("sphere");
-            count += ProcessColliders<CapsuleCollider>("capsule");
+            ProcessColliders<BoxCollider>("box");
+            ProcessColliders<SphereCollider>("sphere");
+            ProcessColliders<CapsuleCollider>("capsule");
         }
 
         if (_mode == RevealMode.All || _mode == RevealMode.Mesh)
         {
-            count += ProcessColliders<MeshCollider>("mesh");
+            ProcessColliders<MeshCollider>("mesh");
         }
-
-        return count;
     }
 
-    private static int ProcessColliders<T>(string shapeType) where T : Collider
+    private static void ProcessColliders<T>(string shapeType) where T : Collider
     {
-        PlayerMove playerMove = PlayerUtil.ResolvePlayerMove();
+        var playerMove = PlayerUtil.ResolvePlayerMove();
         T[] colliders = UnityEngine.Object.FindObjectsByType<T>(
             FindObjectsInactive.Include,
             FindObjectsSortMode.None);
@@ -178,8 +174,6 @@ internal static class Colliders
         {
             Plugin.Log.LogDebug($"[Colliders] scan added {count} {shapeType} colliders of type {typeof(T).Name}");
         }
-
-        return count;
     }
 
     private static string ResolveType(Collider collider, PlayerMove playerMove, string shapeType)
@@ -257,6 +251,7 @@ internal static class Colliders
         };
 
         ApplyReveal(entry);
+
         RegisterEntry(entry);
         Entries[collider.GetInstanceID()] = entry;
     }
