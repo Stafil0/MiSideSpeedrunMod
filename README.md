@@ -35,9 +35,15 @@ If no size can be resolved, a default cube is shown and the label is marked `[de
 Volumes stay visible across scene loads while the toggle is on.
 
 ## Collider reveal (physics hitboxes)
-Press `Alt + H` in-game to toggle visible physics collider volumes.  
-Draws enabled non-trigger colliders on box, sphere, and capsule types.
-Volumes stay visible across scene loads while the toggle is on.
+Press `Alt + H` in-game to cycle visible physics collider volumes.  
+Each press advances: primitives (box, sphere, capsule) → mesh colliders → all colliders → off.  
+Volumes stay visible across scene loads while a mode is active.
+
+## Texture hide
+Press `Alt + T` in-game to cycle texture hiding for route checking.  
+Each press advances: primitive colliders → mesh colliders → all colliders → all renderers → restored.  
+Hides renderers on matching objects (player and mod visuals are excluded).  
+State is restored on the main menu and re-applied after scene loads while active.
 
 ## Interactable reveal
 Press `Alt + I` in-game to toggle visible interactable volumes.  
@@ -69,7 +75,12 @@ Labels show the live floor distance to the object.
   <tr>
     <td>Alt + H</td>
     <td>Toggle collider reveal</td>
-    <td>In-game: show or hide color-coded physics collider volumes. See Collider reveal (physics hitboxes).</td>
+    <td>In-game: cycle color-coded physics collider volumes. See Collider reveal (physics hitboxes).</td>
+  </tr>
+  <tr>
+    <td>Alt + T</td>
+    <td>Toggle texture hide</td>
+    <td>In-game: cycle texture hiding by collider scope or all renderers. See Texture hide.</td>
   </tr>
   <tr>
     <td>Alt + I</td>
