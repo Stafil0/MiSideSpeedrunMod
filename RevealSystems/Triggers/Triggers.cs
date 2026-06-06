@@ -13,6 +13,8 @@ internal static class Triggers
     private static readonly int Mode = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZTest = Shader.PropertyToID("_ZTest");
+    private static readonly int Cull = Shader.PropertyToID("_Cull");
 
     internal static void CacheEventCollider(Trigger_Event trigger, BoxCollider box)
     {
@@ -386,7 +388,10 @@ internal static class Triggers
         mat.SetInt(SrcBlend, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         mat.SetInt(DstBlend, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
         mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.renderQueue = 3000;
+        mat.SetInt("_ZWrite", 0);
+        mat.SetInt(ZTest, (int)UnityEngine.Rendering.CompareFunction.Always);
+        mat.SetInt(Cull, (int)UnityEngine.Rendering.CullMode.Off);
+        mat.renderQueue = 3100;
         meshRenderer.material = mat;
     }
 
