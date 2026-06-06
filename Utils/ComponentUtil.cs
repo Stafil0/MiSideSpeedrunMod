@@ -17,6 +17,11 @@ public static class ComponentUtil
 
         foreach (Component component in gameObject.GetComponentsInParent<Component>(true))
         {
+            if (component == null)
+            {
+                continue;
+            }
+
             if (component.GetType().Name.StartsWith("Trigger_"))
             {
                 return true;

@@ -8,33 +8,62 @@ namespace SpeedrunMod.RevealSystems.Colliders;
 
 internal static class Colliders
 {
+    internal enum RevealMode
+    {
+        Off,
+        Primitives,
+        Mesh,
+        All
+    }
+
     private const float RescanIntervalSeconds = 2f;
 
     private static readonly Dictionary<int, ColliderEntry> Entries = new();
-    private static bool _isRevealing;
+    private static RevealMode _mode = RevealMode.Off;
     private static float _nextRescanAt;
 
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int Mode = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZTest = Shader.PropertyToID("_ZTest");
+    private static readonly int Cull = Shader.PropertyToID("_Cull");
 
-    internal static bool IsRevealing() => _isRevealing;
+    internal static bool IsRevealing() => _mode != RevealMode.Off;
+
+    internal static RevealMode Switch()
+    {
+        _mode = _mode switch
+        {
+            RevealMode.Off => RevealMode.Primitives,
+            RevealMode.Primitives => RevealMode.Mesh,
+            RevealMode.Mesh => RevealMode.All,
+            _ => RevealMode.Off
+        };
+
+        Reveal();
+        return _mode;
+    }
 
     internal static void Reveal()
     {
         Clear();
-        _isRevealing = true;
+
+        if (_mode == RevealMode.Off)
+        {
+            return;
+        }
+
         _nextRescanAt = Time.realtimeSinceStartup + RescanIntervalSeconds;
 
         int count = ScanColliders();
-        Plugin.Log.LogInfo($"[Colliders] Reveal drew {count} colliders ({Entries.Count} entries)");
+        Plugin.Log.LogInfo($"[Colliders] Reveal mode={_mode}, drew {count} colliders ({Entries.Count} entries)");
     }
 
     internal static void Hide()
     {
         Clear();
-        _isRevealing = false;
+        _mode = RevealMode.Off;
     }
 
     internal static void Clear()
@@ -57,7 +86,7 @@ internal static class Colliders
 
     internal static void Update()
     {
-        if (!_isRevealing)
+        if (_mode == RevealMode.Off)
         {
             return;
         }
@@ -102,10 +131,17 @@ internal static class Colliders
     {
         int count = 0;
 
-        count += ProcessColliders<BoxCollider>("box");
-        count += ProcessColliders<SphereCollider>("sphere");
-        count += ProcessColliders<CapsuleCollider>("capsule");
-        count += ProcessColliders<MeshCollider>("mesh");
+        if (_mode == RevealMode.All || _mode == RevealMode.Primitives)
+        {
+            count += ProcessColliders<BoxCollider>("box");
+            count += ProcessColliders<SphereCollider>("sphere");
+            count += ProcessColliders<CapsuleCollider>("capsule");
+        }
+
+        if (_mode == RevealMode.All || _mode == RevealMode.Mesh)
+        {
+            count += ProcessColliders<MeshCollider>("mesh");
+        }
 
         return count;
     }
@@ -314,8 +350,31 @@ internal static class Colliders
         mat.SetInt(SrcBlend, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         mat.SetInt(DstBlend, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
         mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.renderQueue = 3000;
-        meshRenderer.material = mat;
+        mat.SetInt("_ZWrite", 0);
+        mat.SetInt(ZTest, (int)UnityEngine.Rendering.CompareFunction.Always);
+        mat.SetInt(Cull, (int)UnityEngine.Rendering.CullMode.Off);
+        mat.renderQueue = 3100;
+
+        var subMeshCount = 1;
+        MeshFilter meshFilter = volume.GetComponent<MeshFilter>();
+        if (meshFilter != null && meshFilter.sharedMesh != null)
+        {
+            subMeshCount = Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
+        }
+
+        if (subMeshCount <= 1)
+        {
+            meshRenderer.material = mat;
+            return;
+        }
+
+        var mats = new Material[subMeshCount];
+        for (int i = 0; i < subMeshCount; i++)
+        {
+            mats[i] = mat;
+        }
+
+        meshRenderer.materials = mats;
     }
 
     private static Color GetColor(string type) => type switch

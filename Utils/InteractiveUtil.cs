@@ -93,6 +93,11 @@ internal static class InteractiveUtil
 
         foreach (Component component in collider.gameObject.GetComponentsInParent<Component>(true))
         {
+            if (component == null)
+            {
+                continue;
+            }
+
             if (IsInteractiveType(component.GetType().Name))
             {
                 return true;
