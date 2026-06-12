@@ -2,9 +2,13 @@ using HarmonyLib;
 using SpeedrunMod.Notifications;
 using SpeedrunMod.Menus.Frames;
 using SpeedrunMod.Menus.Keybinds;
+using SpeedrunMod.Menus.FastReset;
 using SpeedrunMod.Menus.Overlay;
 using SpeedrunMod.Practice;
-using SpeedrunMod.RevealSystems;
+using SpeedrunMod.RevealSystems.Colliders;
+using SpeedrunMod.RevealSystems.Interactables;
+using SpeedrunMod.RevealSystems.Triggers;
+using SpeedrunMod.RevealSystems.Visuals;
 using SpeedrunMod.Toggles;
 using SpeedrunMod.Overlay;
 using SpeedrunMod.Utils;
@@ -22,14 +26,22 @@ internal class SteamManagerPatch
         VersionText.Update();
         OverlayManager.Update();
         KeybindCapture.Update();
+        FastResetToggle.Update();
         OverlayToggle.Update();
         FpsOverrideToggle.Update();
         FpsUncapToggle.Update();
         EnableRunToggle.Update();
         RevealTriggerToggle.Update();
+        RevealColliderToggle.Update();
+        HideTextureToggle.Update();
+        RevealInteractableToggle.Update();
         PracticeManager.Update();
         FpsSettingsMenu.Update();
         OverlaySettingsMenu.Update();
+        FastResetSettingsMenu.Update();
         Triggers.Update();
+        Colliders.Update();
+        TextureRenderer.Update();
+        Interactables.Update();
     }
 }

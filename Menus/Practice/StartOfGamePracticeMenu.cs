@@ -1,8 +1,7 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
-using SpeedrunMod.Practice.StartOfGame;
-using UnityEngine.SceneManagement;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Menus.Practice;
 
@@ -16,26 +15,11 @@ public static class StartOfGamePracticeMenu
             .Build();
         
         new MenuOptionFactory()
-            .SetName("FULL CHAPTER RUN")
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .SetNextLocation(menu) 
-            .SetOnClick(FullRunStartOfGame.StartRun)
-            .Build();
-        
-        // TODO: Put tutorial close button here
-        
-        new MenuOptionFactory()
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .BuildMenuDivider();
-        
-        new MenuOptionFactory()
             .SetName("FULL TAMAGOTCHI RUN")
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)
             .SetNextLocation(menu) 
-            .SetOnClick(FullTamagotchiRun.LoadChapter)
+            .SetOnClick(LoadTamagotchiFullRun)
             .Build();
         
         new MenuOptionFactory()
@@ -49,10 +33,13 @@ public static class StartOfGamePracticeMenu
         return menu;
     }
     
+    private static void LoadTamagotchiFullRun()
+    {
+        ChapterSelector.Load(ChapterKey.StartOfTheGame, MinigameKey.TamagotchiFull);
+    }
+    
     private static void Load2DCutting()
     {
-        PracticeManager.SelectedGame = PracticeGames.TamagotchiCutting;
-        GlobalGame.LoadingLevel = "Scene 1 - RealRoom";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.StartOfTheGame, MinigameKey.TamagotchiCutting);
     }
 }

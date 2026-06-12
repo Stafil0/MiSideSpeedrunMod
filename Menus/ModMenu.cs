@@ -1,5 +1,6 @@
 using MenuLib.API;
 using MenuLib.API.Factories;
+using SpeedrunMod.Menus.FastReset;
 using SpeedrunMod.Menus.Frames;
 using SpeedrunMod.Menus.Overlay;
 using SpeedrunMod.Menus.Practice;
@@ -48,6 +49,15 @@ public static class ModMenu
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)
             .SetNextLocation(debugSettingsMenu)
+            .Build();
+
+        GameMenu fastResetSettingsMenu = FastResetSettingsMenu.CreateMenu(menu);
+
+        new MenuOptionFactory()
+            .SetName("FAST RESET")
+            .SetParent(menu)
+            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
+            .SetNextLocation(fastResetSettingsMenu)
             .Build();
 
         new MenuOptionFactory()

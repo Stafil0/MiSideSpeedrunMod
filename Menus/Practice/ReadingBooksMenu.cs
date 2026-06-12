@@ -1,9 +1,7 @@
-﻿using MenuLib.API;
+using MenuLib.API;
 using MenuLib.API.Factories;
-using SpeedrunMod.Practice;
-using SpeedrunMod.Practice.ReadingBooks;
-using SpeedrunMod.Practice.StartOfGame;
-using UnityEngine.SceneManagement;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Menus.Practice;
 
@@ -14,14 +12,6 @@ public static class ReadingBooksMenu
         GameMenu menu = new MenuFactory()
             .SetTitle("READING BOOKS")
             .SetBackButton(previousMenu)
-            .Build();
-        
-        new MenuOptionFactory()
-            .SetName("FULL CHAPTER RUN")
-            .SetParent(menu)
-            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
-            .SetNextLocation(menu) 
-            .SetOnClick(FullRunReadingBooks.StartRun)
             .Build();
         
         new MenuOptionFactory()
@@ -79,44 +69,34 @@ public static class ReadingBooksMenu
         // and it will also reload during the first time you load the minigame
         // If we set the minigame mode to Laser it will actually play towers
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Invaders;
-        PracticeManager.SelectedGame = PracticeGames.MilaMinigames;
-        GlobalGame.LoadingLevel = "Scene 19 - Glasses";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadLaserMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Laser;
-        PracticeManager.SelectedGame = PracticeGames.MilaMinigames;
-        GlobalGame.LoadingLevel = "Scene 19 - Glasses";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadTowersMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Towers;
-        PracticeManager.SelectedGame = PracticeGames.MilaMinigames;
-        GlobalGame.LoadingLevel = "Scene 19 - Glasses";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadShapesMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Shapes;
-        PracticeManager.SelectedGame = PracticeGames.MilaMinigames;
-        GlobalGame.LoadingLevel = "Scene 19 - Glasses";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
     
     private static void LoadInvadersMinigame()
     {
         MilaMinigames.LoopThroughAllMinigames = false;
         MilaMinigames.MilaMinigameMode = MilaMinigames.MilaMinigameModes.Invaders;
-        PracticeManager.SelectedGame = PracticeGames.MilaMinigames;
-        GlobalGame.LoadingLevel = "Scene 19 - Glasses";
-        SceneManager.LoadScene("SceneLoading");
+        ChapterSelector.Load(ChapterKey.ReadingBooks, MinigameKey.MilaMinigames);
     }
 }

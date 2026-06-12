@@ -1,6 +1,8 @@
-﻿using System;
-using SpeedrunMod.Practice;
-using SpeedrunMod.RevealSystems;
+using System;
+using SpeedrunMod.RevealSystems.Colliders;
+using SpeedrunMod.RevealSystems.Interactables;
+using SpeedrunMod.RevealSystems.Triggers;
+using SpeedrunMod.RevealSystems.Visuals;
 using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;
 
@@ -24,18 +26,53 @@ internal static class SceneLoadedEvent
         if (scene.name == "SceneMenu")
         {
             VersionText.Start();
-            PracticeManager.SelectedGame = PracticeGames.None;
 
             if (Triggers.IsRevealing())
             {
-                Triggers.HideTriggers();
+                Triggers.Hide();
+            }
+
+            if (Colliders.IsRevealing())
+            {
+                Colliders.Hide();
+            }
+
+            if (TextureRenderer.IsActive())
+            {
+                TextureRenderer.Disable();
+            }
+
+            if (Interactables.IsRevealing())
+            {
+                Interactables.Hide();
             }
         }
+
         if (Triggers.IsRevealing())
         {
+            Triggers.Clear();
             Plugin.Log.LogInfo("Revealing newly loaded triggers");
-            Triggers.RevealTriggers();
+            Triggers.Reveal();
         }
-        PracticeManager.OnSceneLoad(scene);
+
+        if (Colliders.IsRevealing())
+        {
+            Colliders.Clear();
+            Plugin.Log.LogInfo("Revealing newly loaded physics colliders");
+            Colliders.Reveal();
+        }
+
+        if (TextureRenderer.IsActive())
+        {
+            Plugin.Log.LogInfo("Re-hiding collider textures in newly loaded scene");
+            TextureRenderer.Enable();
+        }
+
+        if (Interactables.IsRevealing())
+        {
+            Interactables.Clear();
+            Plugin.Log.LogInfo("Revealing newly loaded interactable colliders");
+            Interactables.Reveal();
+        }
     }
 }

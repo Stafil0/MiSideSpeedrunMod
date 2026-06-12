@@ -1,8 +1,8 @@
-﻿using SpeedrunMod.Utils;
+using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace SpeedrunMod.Practice.ReadingBooks;
+namespace SpeedrunMod.Practice.Minigames;
 
 public static class MilaMinigames
 {
@@ -13,42 +13,44 @@ public static class MilaMinigames
         Shapes,
         Invaders
     }
-    
-    private static int _loadQueued;
-    private static int _startQueued;
-    
+
+    private static readonly ActionQueue Queue = new();
+
     private static GameObject _minigame1Clone;
     private static GameObject _minigame2Clone;
     private static GameObject _minigame3Clone;
     private static GameObject _minigame4Clone;
-    
+
     private static GameObject _minigameGameObject;
     private static Camera _camera;
     public static MilaMinigameModes MilaMinigameMode = MilaMinigameModes.Laser;
     public static bool LoopThroughAllMinigames = false;
-    
+
     public static void QueueLoad()
     {
-        // Is this a weird way to bypass animations, yes, yes it is.
-        // Maybe one day I'll figure out a better way to update the state without letting animations play but-
-        // I guess this is fine for now
-        _loadQueued = 120;
-        
-        // Also resetting to initial state
-        _startQueued = 0;
+        Queue.Clear();
+
         _minigame1Clone = null;
         _minigame2Clone = null;
         _minigame3Clone = null;
         _minigame4Clone = null;
         _minigameGameObject = null;
         _camera = null;
-        
+
         HideCamera();
-        
-        Time.timeScale = 10f;
+
+        TimeUtil.MultiplyTimeScale(10);
+
+        Queue.EnqueueWait(seconds: 3f);
+        Queue.Enqueue(Load);
     }
 
-    // We want to hide the camera when we need to wait before loading 
+    internal static void Update()
+    {
+        Queue.Tick();
+        EnsureLoaded();
+    }
+
     private static void HideCamera()
     {
         Camera camera = Camera.main;
@@ -63,40 +65,31 @@ public static class MilaMinigames
         }
     }
 
-    internal static void Update()
+    private static void EnsureLoaded()
     {
-        if (_loadQueued > 0)
-        {
-            _loadQueued--;
-            if (_loadQueued == 0)
-            {
-                _loadQueued = 0;
-                Load();                
-            }
-        }
-        
-        if (_startQueued > 0)
-        {
-            _startQueued--;
-            if (_startQueued == 0)
-            {
-                _startQueued = 0;
-                Location19_GlitchGame game = _minigameGameObject.GetComponent<Location19_GlitchGame>();
-                StartGame(game);
-            }
-        }
-
-        if (_minigameGameObject == null && _minigame1Clone != null && _minigame2Clone != null && _minigame3Clone != null && _minigame4Clone != null)
+        if (_minigameGameObject == null &&
+            _minigame1Clone != null &&
+            _minigame2Clone != null &&
+            _minigame3Clone != null &&
+            _minigame4Clone != null)
         {
             ReloadGame();
         }
     }
 
+    private static void QueueStartGame(Location19_GlitchGame game)
+    {
+        game.gameObject.active = true;
+        _minigameGameObject = game.gameObject;
+        Queue.EnqueueWait(seconds: 0.1f);
+        Queue.Enqueue(() => StartGame(game));
+    }
+
     private static void Load()
     {
-        Time.timeScale = 1f;
+        TimeUtil.ResetTimeScale();
         CleanupStartingScene();
-            
+
         Location19_GlitchGame[] games = Object.FindObjectsOfType<Location19_GlitchGame>(true);
         foreach (Location19_GlitchGame glitchGame in games)
         {
@@ -124,22 +117,15 @@ public static class MilaMinigames
         ReloadGame();
     }
 
-    private static void QueueStartGame(Location19_GlitchGame game)
-    {
-        game.gameObject.active = true;
-        _minigameGameObject = game.gameObject;
-        _startQueued = 5;
-    }
-
     private static void StartGame(Location19_GlitchGame game)
-    { 
-        Time.timeScale = 1f;
+    {
+        TimeUtil.ResetTimeScale();
         if (_camera != null)
         {
             _camera.gameObject.active = true;
             _camera = null;
         }
-        
+
         game.gameObject.active = true;
         _minigameGameObject = game.gameObject;
 
@@ -149,13 +135,13 @@ public static class MilaMinigames
     private static void CleanupStartingScene()
     {
         World gameWorld = Object.FindObjectOfType<World>();
-        
+
         if (gameWorld == null)
         {
             Plugin.Log.LogError("World could not be found during LaserMinigame Practice CleanupStart");
             return;
         }
-        
+
         Transform gameTransform = gameWorld.gameObject.transform;
         gameTransform.Find("Dialogues").gameObject.active = false;
         gameTransform.Find("Quests/General").gameObject.active = false;
@@ -170,7 +156,7 @@ public static class MilaMinigames
             MilaMinigameMode += 1;
             if (MilaMinigameMode > MilaMinigameModes.Invaders) MilaMinigameMode = MilaMinigameModes.Laser;
         }
-        
+
         GameObject go = null;
         switch (MilaMinigameMode)
         {
@@ -193,15 +179,15 @@ public static class MilaMinigames
             Plugin.Log.LogError("While playing Mila minigames and reloading a gameobject couldn't be created");
             return;
         }
-         
+
         Location19_GlitchGame game = go.GetComponent<Location19_GlitchGame>();
-        
+
         QueueStartGame(game);
     }
 
     public static void GameEnded(Location19_GlitchGame game)
     {
-        Time.timeScale = 10f;
+        TimeUtil.MultiplyTimeScale(10);
         game.eventReady = new UnityEvent();
         HideCamera();
     }

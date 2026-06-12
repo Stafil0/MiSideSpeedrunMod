@@ -28,6 +28,11 @@ internal static class NotificationManager
         }
 
         GameObject go = Object.Instantiate(_hintScreenTemplate, _interfaceObject.gameObject.transform);
+        if (go == null)
+        {
+            Plugin.Log.LogWarning("[Notifications] Failed to instantiate hint screen");
+            return false;
+        }
 
         Text text = go.GetComponentInChildren<Text>();
         text.text = notificationMessage.Text;
@@ -42,7 +47,9 @@ internal static class NotificationManager
 
     private static void UpdatePositions()
     {
-        for (int i = NotificationObjects.Count - 1; i >= 0; i--)
+        NotificationObjects.RemoveAll(static n => n.HintObject == null);
+
+        for (int i = 0; i < NotificationObjects.Count; i++)
         {
             GameObject go = NotificationObjects[i].HintObject;
             Vector3 pos = go.transform.position;

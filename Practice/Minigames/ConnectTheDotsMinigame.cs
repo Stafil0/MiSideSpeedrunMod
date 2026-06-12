@@ -1,15 +1,14 @@
-﻿using System;
+using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using Object = UnityEngine.Object;
 
-namespace SpeedrunMod.Practice.DummiesPuzzles;
+namespace SpeedrunMod.Practice.Minigames;
 
-internal class ConnectTheDots
+internal class ConnectTheDotsMinigame
 {
-    private static bool _loadQueued;
-    private static bool _doorOpenQueued;
-    private static int _gameStartQueued = -1;
+    private static readonly ActionQueue Queue = new();
+
     private static GameObject _lever1Clone;
     private static GameObject _lever2Clone;
     private static GameObject _lever1Object;
@@ -17,54 +16,35 @@ internal class ConnectTheDots
     private static Transform _roomTransform;
     public static int PlayingGame = -1;
     public static bool SwitchGames = false;
-    
+
     public static void QueueLoad()
     {
-        _loadQueued = true;
-        _gameStartQueued = -1;
+        Queue.Clear();
+        Queue.Enqueue(Load);
     }
 
     internal static void Update()
     {
-        if (_loadQueued)
-        {
-            _loadQueued = false;
-            Load();
-        }
-
-        if (_doorOpenQueued)
-        {
-            _doorOpenQueued = false;
-            DoorOpen();
-        }
-
-        if (_gameStartQueued >= 0)
-        {
-            if (_gameStartQueued == 0)
-            {
-                GameStart();
-            }
-            _gameStartQueued--;
-        }
+        Queue.Tick();
     }
 
     private static void Load()
     {
         PrepareScene();
         PrepareClones();
-        _doorOpenQueued = true;
+        Queue.Enqueue(DoorOpen);
     }
 
     private static void PrepareScene()
     {
         World gameWorld = Object.FindObjectOfType<World>();
-        
+
         if (gameWorld == null)
         {
             Plugin.Log.LogError("World could not be found during ConnectTheDots Practice PrepareScene");
             return;
         }
-        
+
         Transform gameTransform = gameWorld.gameObject.transform;
         gameTransform.Find("World/Backrooms/Room 6 (City)").gameObject.active = true;
         gameTransform.Find("World/Backrooms/Room 7 (Fog)").gameObject.active = true;
@@ -73,13 +53,13 @@ internal class ConnectTheDots
     private static void PrepareClones()
     {
         World gameWorld = Object.FindObjectOfType<World>();
-        
+
         if (gameWorld == null)
         {
             Plugin.Log.LogError("World could not be found during ConnectTheDots Practice PrepareClones");
             return;
-        }        
-        
+        }
+
         _roomTransform = gameWorld.gameObject.transform.Find("World/Backrooms/Room 7 (Fog)/House/").gameObject.transform;
         _lever1Object = gameWorld.gameObject.transform.Find("World/Backrooms/Room 7 (Fog)/House/Switch 1").gameObject;
         _lever2Object = gameWorld.gameObject.transform.Find("World/Backrooms/Room 7 (Fog)/House/Switch 2").gameObject;
@@ -92,27 +72,27 @@ internal class ConnectTheDots
     private static void DoorOpen()
     {
         World gameWorld = Object.FindObjectOfType<World>();
-        
+
         if (gameWorld == null)
         {
             Plugin.Log.LogError("World could not be found during ConnectTheDots Practice DoorOpen");
             return;
         }
-        
+
         Transform gameTransform = gameWorld.gameObject.transform;
         GameObject door = gameTransform.Find("World/Backrooms/Room 6 (City)/R6 Door").gameObject;
         ObjectInteractive objectInteractive = door.GetComponent<ObjectInteractive>();
         objectInteractive.Click();
 
-        Time.timeScale = 10;
-        
-        PlayNextGame();
+        TimeUtil.MultiplyTimeScale(10);
+
+        PlayNextGame(delaySeconds: 5f);
     }
 
-    internal static void PlayNextGame()
+    internal static void PlayNextGame(float delaySeconds = 2f)
     {
         if (SwitchGames) PlayingGame = PlayingGame == 1 ? 2 : 1;
-        
+
         if (PlayingGame == 1)
         {
             PlayingGame = 1;
@@ -129,8 +109,9 @@ internal class ConnectTheDots
             _lever2Object = game;
         }
 
-        Time.timeScale = 10;
-        _gameStartQueued = 60;
+        TimeUtil.MultiplyTimeScale(10);
+        Queue.EnqueueWait(seconds: delaySeconds);
+        Queue.Enqueue(GameStart);
     }
 
     private static GameObject PlayGame(GameObject objectToDestroy, GameObject cloneToPrepare)
@@ -143,7 +124,7 @@ internal class ConnectTheDots
 
     private static void GameStart()
     {
-        Time.timeScale = 1;
+        TimeUtil.ResetTimeScale();
         GameObject gameLines;
         if (PlayingGame == 1)
         {
@@ -153,8 +134,9 @@ internal class ConnectTheDots
         {
             gameLines = _lever2Object.transform.Find("GameLines 2/Interface Lines").gameObject;
         }
+
         Location11_GameLinesMain game = gameLines.GetComponent<Location11_GameLinesMain>();
-        game.eventStopLevel.AddListener((UnityAction) PlayNextGame);
+        game.eventStopLevel.AddListener((UnityAction)(() => PlayNextGame(delaySeconds: 1f)));
         game.StartGame();
     }
 }

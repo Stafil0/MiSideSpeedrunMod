@@ -1,71 +1,113 @@
-﻿using SpeedrunMod.Practice.DummiesPuzzles;
-using SpeedrunMod.Practice.MakeMannequin;
-using SpeedrunMod.Practice.ReadingBooks;
-using SpeedrunMod.Practice.StartOfGame;
+﻿using SpeedrunMod.Events;
+using SpeedrunMod.Practice.Chapters;
+using SpeedrunMod.Practice.Minigames;
+using SpeedrunMod.Utils;
 using UnityEngine.SceneManagement;
 
 namespace SpeedrunMod.Practice;
 
 public static class PracticeManager
 {
-    public static PracticeGames SelectedGame { get; set; }  = PracticeGames.None;
+    private static bool _initialized;
 
-    internal static void OnSceneLoad(Scene scene)
+    public static GameChapter CurrentChapter { get; set; } = ChapterResolver.None;
+
+    public static ChapterMinigame CurrentMinigame { get; set; } = MinigameResolver.None;
+
+    internal static void Initialize()
     {
-        if(SelectedGame == PracticeGames.None) return;
-        switch (SelectedGame)
+        SceneLoadedEvent.SceneLoaded += OnSceneLoad;
+        _initialized = true;
+    }
+
+    internal static void OnChapterLoad(GameChapter chapter, ChapterMinigame minigame)
+    {
+        CurrentChapter = chapter;
+        CurrentMinigame = minigame;
+
+        Plugin.Log.LogInfo($"PracticeManager.OnChapterLoad: chapter={chapter.Id}, minigame={minigame}");
+    }
+
+    internal static void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
+        var oldChapter = CurrentChapter;
+        var oldMinigame = CurrentMinigame;
+        var chapter = ChapterResolver.ResolveChapter(scene.name);
+        var minigame = ChapterResolver.ResolveMinigame(chapter, oldMinigame);
+
+        if (chapter == null)
         {
-            case PracticeGames.TamagotchiCutting:
-                if(scene.name == "Scene 1 - RealRoom") TamagotchiCutting.QueueLoad();
+            return;
+        }
+
+        Plugin.Log.LogInfo($"PracticeManager.OnSceneLoad: scene={scene.name}, mode={mode}, oldChapter={oldChapter.Id}, oldMinigame={oldMinigame}, chapter={chapter.Id}, minigame={minigame}");
+
+        switch (chapter.Key)
+        {
+            case ChapterKey.MainMenu:
+                CurrentChapter = ChapterResolver.None;
+                CurrentMinigame = MinigameResolver.None;
                 break;
-            case PracticeGames.FullTamagotchiRun:
-                if(scene.name == "Scene 1 - RealRoom") FullTamagotchiRun.QueueLoad();
-                if(scene.name == "Scene 2 - InGame") FullTamagotchiRun.LoadChapter();
+
+            case ChapterKey.StartOfTheGame when minigame != null && minigame.Key == MinigameKey.TamagotchiCutting:
+                TamagotchiCuttingMinigame.QueueLoad();
                 break;
-            case PracticeGames.MakeMannequin:
-                if(scene.name == "Scene 10 - ManekenWorld") MannequinMinigame.QueueLoad();
+
+            case ChapterKey.StartOfTheGame when minigame != null && minigame.Key == MinigameKey.TamagotchiFull:
+                TamagotchiFullMinigame.QueueLoad();
                 break;
-            case PracticeGames.FullRunStartOfGame:
-                if(scene.name == "Scene 2 - InGame") FullRunStartOfGame.StartRun();
+
+            case ChapterKey.InsideTheGame when oldMinigame != null && oldMinigame.Key == MinigameKey.TamagotchiFull:
+                // Looping back to the start of the minigame for practice
+                ChapterSelector.Load(ChapterKey.StartOfTheGame, MinigameKey.TamagotchiFull);
+                return;
+
+            case ChapterKey.ChibiMita when minigame != null && minigame.Key == MinigameKey.MakeMannequin:
+                MannequinMinigame.QueueLoad();
                 break;
-            case PracticeGames.ConnectTheDots:
-                if(scene.name == "Scene 11 - Backrooms") ConnectTheDots.QueueLoad();
+
+            case ChapterKey.DummiesAndForgottenPuzzles when minigame != null && minigame.Key == MinigameKey.ConnectTheDots:
+                ConnectTheDotsMinigame.QueueLoad();
                 break;
-            case PracticeGames.FullMilaRun:
-                if(scene.name == "Scene 20 - FightMita") FullRunReadingBooks.StartRun();
-                break;
-            case PracticeGames.MilaMinigames:
-                if(scene.name == "Scene 19 - Glasses") MilaMinigames.QueueLoad();
-                break;
-            case PracticeGames.None:
-            default:
+
+            case ChapterKey.ReadingBooks when minigame != null && minigame.Key == MinigameKey.MilaMinigames:
+                MilaMinigames.QueueLoad();
                 break;
         }
+
+        if (!chapter.IsPlayable)
+        {
+            return;
+        }
+        
+        CurrentChapter = chapter;
+        CurrentMinigame = minigame;
     }
 
     internal static void Update()
     {
-        if(SelectedGame == PracticeGames.None) return;
-        switch (SelectedGame)
+        if (!_initialized) Initialize();
+
+        if (CurrentMinigame == null || CurrentMinigame.Key == MinigameKey.None) return;
+
+        Plugin.Log.LogInfo($"Update: CurrentMinigame={CurrentMinigame}", "PracticeManager", 5f);
+
+        switch (CurrentMinigame.Key)
         {
-            case PracticeGames.TamagotchiCutting:
-                TamagotchiCutting.Update();
+            case MinigameKey.TamagotchiCutting:
+                TamagotchiCuttingMinigame.Update();
                 break;
-            case PracticeGames.FullTamagotchiRun:
-                FullTamagotchiRun.Update();
+            case MinigameKey.TamagotchiFull:
+                TamagotchiFullMinigame.Update();
                 break;
-            case PracticeGames.MakeMannequin:
+            case MinigameKey.MakeMannequin:
                 MannequinMinigame.Update();
                 break;
-            case PracticeGames.ConnectTheDots:
-                ConnectTheDots.Update();
+            case MinigameKey.ConnectTheDots:
+                ConnectTheDotsMinigame.Update();
                 break;
-            case PracticeGames.MilaMinigames:
+            case MinigameKey.MilaMinigames:
                 MilaMinigames.Update();
-                break;
-            case PracticeGames.None:
-            case PracticeGames.FullRunStartOfGame:
-            default:
                 break;
         }
     }

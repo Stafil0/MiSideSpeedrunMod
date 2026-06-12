@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-namespace SpeedrunMod.Practice.MakeMannequin;
+namespace SpeedrunMod.Practice.Minigames;
 
 public static class MannequinMinigame
 {
@@ -31,11 +31,6 @@ public static class MannequinMinigame
         if (!_minigamesAutomate.asyncLoading.isDone || !_minigamesAutomate.loading) return;
         _minigamesAutomate.loading = false;
         _minigamesAutomate.StartGame();
-
-        // if (_cookingGameObject == null && _cookingClone != null)
-        // {
-        //     ReloadGame();
-        // }
     }
 
     private static void Load()

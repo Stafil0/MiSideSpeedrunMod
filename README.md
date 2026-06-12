@@ -8,6 +8,17 @@ This mod has multiple features that can be useful for messing around with the ga
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Practice` to play specific parts of the game to practice them.  
 These parts will automatically restart when you reach the end.
 
+## Chapter selector
+In the in-game pause menu, open `CHAPTERS` to load any playable story chapter.  
+Chapters are split across pages (use `NEXT` / `PREVIOUS` at the bottom of each page).  
+This always does a full reload (main menu, then load), including the correct chapter entry for shared scenes (e.g. Cappie vs Beyond the World).
+
+## Fast reset
+In the main menu you can go to `Settings->Mods->Speedrun Mod->Fast Reset` to configure in-game chapter resets.  
+Hold the reset key (default `R`) for the configured time (default `1` second); a preview notification shows what will happen.  
+While holding the reset key, use a modifier for other actions (defaults: `Left Shift` = new game, `Left Ctrl` = previous chapter, `Left Alt` = next chapter).  
+Leaving the Novels chapter for another chapter always uses a full reload.
+
 ## Refresh rate settings
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Refresh Rate` to configure a reported refresh rate target.  
 Using refresh rate above `540 Hz` will invalidate the run.  
@@ -16,6 +27,34 @@ The mod also shows periodic refresh-rate notifications in-game.
 ## Overlay
 In the main menu you can go to `Settings->Mods->Speedrun Mod->Overlay` to configure and inspect the debug overlay.  
 By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
+
+## Trigger reveal (hitboxes)
+Press `Alt + O` in-game to toggle visible trigger volumes.  
+Each trigger type is drawn with a color-coded shape that matches its real bounds when possible.
+If no size can be resolved, a default cube is shown and the label is marked `[default cube]`.  
+Volumes stay visible across scene loads while the toggle is on.
+
+## Collider reveal (physics hitboxes)
+Press `Alt + H` in-game to cycle visible physics collider volumes.  
+Each press advances: primitives (box, sphere, capsule) → mesh colliders → all colliders → off.  
+Volumes stay visible across scene loads while a mode is active.
+
+## Texture hide
+Press `Alt + T` in-game to cycle texture hiding for route checking.  
+Each press advances: primitive colliders → mesh colliders → all colliders → all renderers → restored.  
+Hides renderers on matching objects (player and mod visuals are excluded).  
+State is restored on the main menu and re-applied after scene loads while active.
+
+## Interactable reveal
+Press `Alt + I` in-game to toggle visible interactable volumes.  
+Each volume is recoloured every frame to show its current interaction state relative to the player:
+
+- **Purple** — out of range.
+- **Blue** — within reach on the ground plane (the game would accept an interaction at this distance).
+- **Yellow** — aimed at but not yet interactable.
+- **Green** — the game has locked onto it; the interact prompt will fire.
+
+Labels show the live floor distance to the object.
 
 ## Fixes
 - When pressing the start with a clean slate button the achievements will also be reset if this mod is enabled.
@@ -30,8 +69,23 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
   </tr>
   <tr>
     <td>Alt + O</td>
-    <td>Toggle Triggers</td>
-    <td>This toggle will change whether or not you can see in game triggers.</td>
+    <td>Toggle trigger reveal</td>
+    <td>In-game: show or hide color-coded trigger hitbox volumes. See Trigger reveal (hitboxes).</td>
+  </tr>
+  <tr>
+    <td>Alt + H</td>
+    <td>Toggle collider reveal</td>
+    <td>In-game: cycle color-coded physics collider volumes. See Collider reveal (physics hitboxes).</td>
+  </tr>
+  <tr>
+    <td>Alt + T</td>
+    <td>Toggle texture hide</td>
+    <td>In-game: cycle texture hiding by collider scope or all renderers. See Texture hide.</td>
+  </tr>
+  <tr>
+    <td>Alt + I</td>
+    <td>Toggle interactable reveal</td>
+    <td>In-game: show or hide interactable volumes with state colour-coding (purple/blue/yellow/green). See Interactable reveal.</td>
   </tr>
   <tr>
     <td>Alt + L</td>
@@ -53,12 +107,17 @@ By default the overlay toggle hotkey is `F4` (configurable in the overlay menu).
     <td>Overlay toggle</td>
     <td>In-game: toggle overlay on/off. Rebind under Overlay settings.</td>
   </tr>
+  <tr>
+    <td>R hold (configurable)</td>
+    <td>Fast reset</td>
+    <td>In-game: hold to restart chapter; combine with modifier keys for previous/next chapter or new game. See Fast Reset settings.</td>
+  </tr>
 </table> 
 
 # Installing
 Before you can install this mod you need to have BepInEx with Il2Cpp support installed, this can be downloaded on their [Bleeding Edge download page](https://builds.bepinex.dev/projects/bepinex_be).  
 You then need to extract the zip file to your game directory.  
-Then you can download the most recent version on github through the releases section and put this dll file in the plugin folder.  
+Then you can download the most recent version on github through the releases section and put `SliceCraft.SpeedrunMod.dll` and `SliceCraft.MenuLib.dll` in the plugin folder.  
 You can find this folder at `MiSide/BepInEx/plugins`.
 
 # Contributing

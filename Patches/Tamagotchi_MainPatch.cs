@@ -1,7 +1,6 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using SpeedrunMod.Practice;
-using SpeedrunMod.Practice.StartOfGame;
-using UnityEngine;
+using SpeedrunMod.Practice.Minigames;
 
 namespace SpeedrunMod.Patches;
 
@@ -12,9 +11,9 @@ public class Tamagotchi_MainPatch
     [HarmonyPrefix]
     public static void GameStartPatch()
     {
-        if (PracticeManager.SelectedGame == PracticeGames.FullTamagotchiRun)
+        if (PracticeManager.CurrentMinigame != null && PracticeManager.CurrentMinigame.Key == MinigameKey.TamagotchiFull)
         {
-            FullTamagotchiRun.TamagotchiLoaded();
+            TamagotchiFullMinigame.TamagotchiLoaded();
         }
     }
 }
