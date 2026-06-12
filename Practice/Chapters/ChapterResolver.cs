@@ -21,76 +21,7 @@ internal static class ChapterResolver
 
     static ChapterResolver()
     {
-#if DEBUG
-        // TODO: Delete after testing all chapters for fast reloadability
-        #region Debug Chapters
-
-        Register(ChapterKey.None, "NONE", string.Empty, order: -1, isPlayable: false);
-        Register(ChapterKey.Loading, "LOADING", "SceneLoading", order: -2, isPlayable: false);
-        Register(ChapterKey.MainMenu, "MAIN MENU", "SceneMenu", order: 0, isPlayable: false);
-
-        Register(
-            ChapterKey.StartOfTheGame,
-            "START OF THE GAME",
-            "Scene 1 - RealRoom",
-            order: 1,
-            isFastReloadable: false,
-            supportedMinigames: new[] { MinigameKey.TamagotchiCutting, MinigameKey.TamagotchiFull });
-
-        Register(ChapterKey.InsideTheGame, "I'M INSIDE A GAME?", "Scene 2 - InGame", order: 2, isFastReloadable: false);
-        Register(ChapterKey.TogetherAtLast, "TOGETHER AT LAST", "Scene 3 - WeTogether", order: 3, isFastReloadable: false);
-
-        Register(ChapterKey.ThingsGetWeird, "THINGS GET WEIRD", "Scene 4 - StartSecret", order: 4, isFastReloadable: true);
-        Register(ChapterKey.ThingsGetScary, "THINGS GET WEIRD (HORROR)", "Scene 5 - StartHorror", order: 5, isFastReloadable: true);
-        Register(ChapterKey.TheBasement, "THE BASEMENT", "Scene 6 - BasementFirst", order: 6, isFastReloadable: true);
-        Register(ChapterKey.BeyondTheWorld, "BEYOND THE WORLD", "Scene 7 - Backrooms", order: 7, isFastReloadable: true);
-        Register(ChapterKey.Cappie, "CAPPIE", "Scene 7 - Backrooms", order: 8, levelLoad: 1, isFastReloadable: true);
-        Register(ChapterKey.TheLoop, "THE LOOP", "Scene 8 - ReRooms", order: 9, isFastReloadable: true);
-
-        Register(
-            ChapterKey.ChibiMita,
-            "CHIBI MITA",
-            "Scene 9 - ChibiMita",
-            order: 10,
-            supportedMinigames: new[] { MinigameKey.MakeMannequin },
-            isFastReloadable: true);
-
-        Register(ChapterKey.ManekenWorld, "MANEKEN WORLD", "Scene 10 - ManekenWorld", order: 11, isFastReloadable: true);
-
-        Register(
-            ChapterKey.DummiesAndForgottenPuzzles,
-            "DUMMIES AND FORGOTTEN PUZZLES",
-            "Scene 11 - Backrooms",
-            order: 12,
-            supportedMinigames: new[] { MinigameKey.ConnectTheDots },
-            isFastReloadable: true);
-
-        Register(ChapterKey.GhostMita, "GHOST MITA", "Scene 11 - Backrooms", order: 13, levelLoad: 1, isFastReloadable: true);
-        Register(ChapterKey.SheJustWantsToSleep, "SHE JUST WANTS TO SLEEP", "Scene 17 - Dreamer", order: 14, isFastReloadable: true);
-        Register(ChapterKey.Novels, "NOVELS", "Scene 18 - 2D", order: 15, isFastReloadable: true);
-
-        Register(
-            ChapterKey.ReadingBooks,
-            "READING BOOKS, DESTROYING GLITCHES",
-            "Scene 19 - Glasses",
-            order: 16,
-            supportedMinigames: new[] { MinigameKey.MilaMinigames },
-            isFastReloadable: true);
-
-        Register(ChapterKey.RunAndHide, "RUN AND HIDE!", "Scene 20 - FightMita", order: 17, isFastReloadable: true);
-        Register(ChapterKey.OldVersion, "OLD VERSION", "Scene 12 - Freak", order: 18, isFastReloadable: true);
-        Register(ChapterKey.BeingCandid, "BEING CANDID", "Scene 14 - MobilePlayer", order: 19, isFastReloadable: true);
-        Register(ChapterKey.TheRealWorld, "THE REAL WORLD", "Scene 14 - MobilePlayer", order: 20, levelLoad: 1, isFastReloadable: true);
-        Register(ChapterKey.Reboot, "REBOOT", "Scene 15 - BasementAndDeath", order: 21, isFastReloadable: true);
-        Register(ChapterKey.LeaveTheCore, "LEAVE THE CORE", "Scene 15 - BasementAndDeath", order: 22, levelLoad: 1, isFastReloadable: true);
-        Register(ChapterKey.MainEnding, "THE END", "Scene 16 - TheEnd", order: 23);
-        Register(ChapterKey.StayEnding, "THE END (STAY)", "Scene 16 - TheEnd", order: 24, levelLoad: 1);
-        Register(ChapterKey.SafeEnding, "THE END (SAFE)", "Scene 16 - TheEnd", order: 25, levelLoad: 2);
-
-        #endregion
-#else
-        #region Real Chapters
-
+        // TODO: check for fast reloadable chapters
         Register(ChapterKey.None, "NONE", string.Empty, order: -1, isPlayable: false);
         Register(ChapterKey.Loading, "LOADING", "SceneLoading", order: -2, isPlayable: false);
         Register(ChapterKey.MainMenu, "MAIN MENU", "SceneMenu", order: 0, isPlayable: false);
@@ -137,8 +68,7 @@ internal static class ChapterResolver
             "READING BOOKS, DESTROYING GLITCHES",
             "Scene 19 - Glasses",
             order: 16,
-            supportedMinigames: new[] { MinigameKey.MilaMinigames },
-            isFastReloadable: true);
+            supportedMinigames: new[] { MinigameKey.MilaMinigames });
 
         Register(ChapterKey.RunAndHide, "RUN AND HIDE!", "Scene 20 - FightMita", order: 17);
         Register(ChapterKey.OldVersion, "OLD VERSION", "Scene 12 - Freak", order: 18);
@@ -149,9 +79,6 @@ internal static class ChapterResolver
         Register(ChapterKey.MainEnding, "THE END", "Scene 16 - TheEnd", order: 23);
         Register(ChapterKey.StayEnding, "THE END (STAY)", "Scene 16 - TheEnd", order: 24, levelLoad: 1, isPlayable: false);
         Register(ChapterKey.SafeEnding, "THE END (SAFE)", "Scene 16 - TheEnd", order: 25, levelLoad: 2, isPlayable: false);
-
-        #endregion
-#endif
     }
 
     internal static string ResolveScene(GameChapter chapter, ChapterMinigame minigame)
