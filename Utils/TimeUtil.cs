@@ -23,4 +23,7 @@ public class TimeUtil
         var maxScale = TimescaleThreshold / hz;
         Time.timeScale = Mathf.Min(candidate, maxScale);
     }
+
+    internal static void StopTimeEvents(string name) =>
+        ComponentUtil.FindIncludingInactive(name)?.GetComponent<Time_Events>()?.StopAllTime();
 }
