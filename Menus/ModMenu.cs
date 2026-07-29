@@ -69,6 +69,15 @@ public static class ModMenu
             .SetNextLocation(skipsSettingsMenu)
             .Build();
 
+        GameMenu softlocksSettingsMenu = SoftlocksSettingsMenu.CreateMenu(menu);
+
+        new MenuOptionFactory()
+            .SetName("SOFTLOCKS")
+            .SetParent(menu)
+            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
+            .SetNextLocation(softlocksSettingsMenu)
+            .Build();
+
         new MenuOptionFactory()
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)

@@ -1,5 +1,7 @@
 using System;
 using HarmonyLib;
+using SpeedrunMod.Configs;
+using SpeedrunMod.Notifications;
 using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,11 +16,17 @@ internal static class KindBedroomPaperSoftlockPatch
     private const string StayMitaName = "AnimationPlayer StayMita";
     private const string StayUpEventsName = "TimeAnimation Mita StayUp";
     private const string MitaTakeItemsTimeName = "TimeAnimation Mita TakeItems";
+    private const string Notification = "Softlock Fix: Kind bedroom paper";
 
     [HarmonyPrefix]
     [HarmonyPatch(typeof(ObjectAnimationPlayer), nameof(ObjectAnimationPlayer.AnimationPlay))]
     private static void StayMitaAnimationPlayPrefix(ObjectAnimationPlayer __instance)
     {
+        if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableKindBedroomPaper))
+        {
+            return;
+        }
+
         if (__instance == null || __instance.gameObject.name != StayMitaName || !IsBasementScene())
         {
             return;
@@ -31,6 +39,11 @@ internal static class KindBedroomPaperSoftlockPatch
     [HarmonyPatch(typeof(Time_Events), nameof(Time_Events.YieldRestart))]
     private static void StayUpYieldRestartPrefix(Time_Events __instance)
     {
+        if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableKindBedroomPaper))
+        {
+            return;
+        }
+
         if (__instance == null || __instance.gameObject.name != StayUpEventsName || !IsBasementScene())
         {
             return;
@@ -52,6 +65,7 @@ internal static class KindBedroomPaperSoftlockPatch
             TimeUtil.StopTimeEvents(MitaTakeItemsTimeName);
             ComponentUtil.FindIncludingInactive<ObjectAnimationPlayer>(TakeItemsName)?.eventStartLoop?.Invoke();
             player.AnimationFastStop();
+            NotificationManager.Show(new NotificationMessage(Notification, cooldown: 5f));
             Plugin.Log.LogInfo($"finished TakeItems before {seam}", nameof(KindBedroomPaperSoftlockPatch));
         }
         catch (Exception ex)

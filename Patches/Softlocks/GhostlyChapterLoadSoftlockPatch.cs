@@ -1,5 +1,7 @@
 using System;
 using HarmonyLib;
+using SpeedrunMod.Configs;
+using SpeedrunMod.Notifications;
 using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,6 +13,7 @@ internal static class GhostlyChapterLoadSoftlockPatch
 {
     private const string SceneName = "Scene 11 - Backrooms";
     private const string Room9Name = "Room 9 (Picture)";
+    private const string Notification = "Softlock Fix: Ghostly chapter load";
     private const int GhostMitaLevelLoad = 1;
     private static readonly Vector3 ChapterSpawn = new(0.5f, 0f, 0f);
     private const float ChapterSpawnRotation = 90f;
@@ -20,6 +23,11 @@ internal static class GhostlyChapterLoadSoftlockPatch
     [HarmonyPatch("Start")]
     private static void StartPostfix(World __instance)
     {
+        if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableGhostlyChapterLoad))
+        {
+            return;
+        }
+
         if (__instance == null || !IsBackroomsScene() || GlobalGame.levelLoad != GhostMitaLevelLoad)
         {
             return;
@@ -36,6 +44,7 @@ internal static class GhostlyChapterLoadSoftlockPatch
             SetRoomActive();
             Physics.SyncTransforms();
             TeleportToChapterSpawn(player);
+            NotificationManager.Show(new NotificationMessage(Notification, cooldown: 5f));
             Plugin.Log.LogInfo("repaired chapter-load spawn", nameof(GhostlyChapterLoadSoftlockPatch));
         }
         catch (Exception ex)

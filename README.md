@@ -56,6 +56,10 @@ Each volume is recoloured every frame to show its current interaction state rela
 
 Labels show the live floor distance to the object.
 
+## Softlocks
+In the main menu you can go to `Settings->Mods->Speedrun Mod->Softlocks` to toggle Softlock Fixes.  
+Softlock Fixes are **on by default**. Use **All Softlocks** as a master gate, or turn individual Softlocks off to bisect Softlock vs Softlock Fix without restarting. Softlock Debug (Debug builds only) follows the same Softlock toggle as its Softlock Fix.
+
 ## Fixes
 - When pressing the start with a clean slate button the achievements will also be reset if this mod is enabled.
 - When toggling `skipdialogue` the mod will remember the state of this toggle. Meaning when you restart the game you will keep this toggle in the state that you had before you quit the game.

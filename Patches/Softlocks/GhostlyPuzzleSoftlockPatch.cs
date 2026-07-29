@@ -1,5 +1,7 @@
 using System;
 using HarmonyLib;
+using SpeedrunMod.Configs;
+using SpeedrunMod.Notifications;
 using SpeedrunMod.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,6 +12,7 @@ namespace SpeedrunMod.Patches.Softlocks;
 internal static class GhostlyPuzzleSoftlockPatch
 {
     private const string GhostMitaScene = "Scene 11 - Backrooms";
+    private const string Notification = "Softlock Fix: Ghostly puzzle";
     private const float RepairDelaySeconds = 1.25f;
 
     private static Location11_BlackRoom _instance;
@@ -20,6 +23,11 @@ internal static class GhostlyPuzzleSoftlockPatch
     [HarmonyPatch(nameof(Location11_BlackRoom.PlayerSit))]
     private static void PlayerSitPostfix(Location11_BlackRoom __instance)
     {
+        if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableGhostlyPuzzle))
+        {
+            return;
+        }
+
         if (__instance == null || !IsGhostMitaScene())
         {
             return;
@@ -36,6 +44,14 @@ internal static class GhostlyPuzzleSoftlockPatch
     {
         try
         {
+            if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableGhostlyPuzzle))
+            {
+                _instance = null;
+                _realtimeSincePlayerSit = 0f;
+                _repairApplied = false;
+                return;
+            }
+
             if (__instance == null || __instance != _instance || !IsGhostMitaScene())
             {
                 return;
@@ -87,6 +103,7 @@ internal static class GhostlyPuzzleSoftlockPatch
             FinishPendingPlacements(room);
             EnableAssembleMode(room);
             _repairApplied = true;
+            NotificationManager.Show(new NotificationMessage(Notification, cooldown: 5f));
             Plugin.Log.LogInfo("repaired assemble mode", nameof(GhostlyPuzzleSoftlockPatch));
         }
         catch (Exception ex)
