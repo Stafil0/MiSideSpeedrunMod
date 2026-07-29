@@ -43,4 +43,19 @@ public static class ComponentUtil
 
         return null;
     }
+
+    internal static T FindIncludingInactive<T>(string name) where T : Component
+    {
+        GameObject go = FindIncludingInactive(name);
+        return go != null ? go.GetComponent<T>() : null;
+    }
+
+    internal static void Enable(string name, bool enabled)
+    {
+        GameObject go = FindIncludingInactive(name);
+        if (go != null && go.activeSelf != enabled)
+        {
+            go.SetActive(enabled);
+        }
+    }
 }
