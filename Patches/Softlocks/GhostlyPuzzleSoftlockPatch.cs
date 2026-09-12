@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using SpeedrunMod.Configs;
 using SpeedrunMod.Notifications;
@@ -13,11 +14,12 @@ internal static class GhostlyPuzzleSoftlockPatch
 {
     private const string GhostMitaScene = "Scene 11 - Backrooms";
     private const string Notification = "Softlock Fix: Ghostly puzzle";
+
     private const float RepairDelaySeconds = 1.25f;
 
     private static Location11_BlackRoom _instance;
-    private static float _realtimeSincePlayerSit;
     private static bool _repairApplied;
+    private static readonly Dictionary<int, float> _realtimeSinceSlotIncomplete = new();
 
     [HarmonyPostfix]
     [HarmonyPatch(nameof(Location11_BlackRoom.PlayerSit))]
@@ -34,8 +36,8 @@ internal static class GhostlyPuzzleSoftlockPatch
         }
 
         _instance = __instance;
-        _realtimeSincePlayerSit = Time.realtimeSinceStartup;
         _repairApplied = false;
+        _realtimeSinceSlotIncomplete.Clear();
     }
 
     [HarmonyPostfix]
@@ -47,8 +49,8 @@ internal static class GhostlyPuzzleSoftlockPatch
             if (!SoftlockConfig.IsEnabled(SoftlockConfig.EnableGhostlyPuzzle))
             {
                 _instance = null;
-                _realtimeSincePlayerSit = 0f;
                 _repairApplied = false;
+                _realtimeSinceSlotIncomplete.Clear();
                 return;
             }
 
@@ -75,14 +77,6 @@ internal static class GhostlyPuzzleSoftlockPatch
                 return;
             }
 
-            // realtime (not scaled): sit starts 0.25s play timer + optional place-piece
-            // animations; don't repair until that window can finish even if timeScale is low.
-            if (Time.realtimeSinceStartup - _realtimeSincePlayerSit < RepairDelaySeconds)
-            {
-                return;
-            }
-
-            // Vanilla still driving place/play timers — wait for them to go idle.
             if (__instance.timeStartPlayPuzle > 0f || __instance.timeStartPuzle > 0f)
             {
                 return;
@@ -100,7 +94,11 @@ internal static class GhostlyPuzzleSoftlockPatch
     {
         try
         {
-            FinishPendingPlacements(room);
+            if (!TryFinishPendingPlacements(room))
+            {
+                return;
+            }
+
             EnableAssembleMode(room);
             _repairApplied = true;
             NotificationManager.Show(new NotificationMessage(Notification, cooldown: 5f));
@@ -112,19 +110,23 @@ internal static class GhostlyPuzzleSoftlockPatch
         }
     }
 
-    private static void FinishPendingPlacements(Location11_BlackRoom room)
+    private static bool TryFinishPendingPlacements(Location11_BlackRoom room)
     {
         var frames = room.framesFound;
         if (frames == null)
         {
-            return;
+            return true;
         }
+
+        var now = Time.realtimeSinceStartup;
+        var settled = true;
 
         for (var i = 0; i < frames.Length; i++)
         {
             var frame = frames[i];
             if (frame?.puzle == null || !frame.puzle.activeSelf)
             {
+                _realtimeSinceSlotIncomplete.Remove(i);
                 continue;
             }
 
@@ -134,14 +136,31 @@ internal static class GhostlyPuzzleSoftlockPatch
             var placementComplete = paper != null && paper.put;
             if (frame.addedTable && placementComplete)
             {
+                _realtimeSinceSlotIncomplete.Remove(i);
+                continue;
+            }
+
+            if (!_realtimeSinceSlotIncomplete.TryGetValue(i, out var incompleteSince))
+            {
+                _realtimeSinceSlotIncomplete[i] = now;
+                settled = false;
+                continue;
+            }
+
+            if (now - incompleteSince < RepairDelaySeconds)
+            {
+                settled = false;
                 continue;
             }
 
             room.indexPuzleWork = i;
             frame.addedTable = true;
             room.PutPuzle();
+            _realtimeSinceSlotIncomplete.Remove(i);
             Plugin.Log.LogInfo($"finished pending placement slot={i}", nameof(GhostlyPuzzleSoftlockPatch));
         }
+
+        return settled;
     }
 
     // Same enable path as Location11_BlackRoom.Update when play timer expires cleanly.
