@@ -10,7 +10,7 @@ namespace SpeedrunMod.Menus;
 
 public static class ModMenu
 {
-    private static readonly bool Outdated = !MyPluginInfo.PLUGIN_VERSION.Equals(VersionText.NewestVersion) && VersionText.NewestVersion != null;
+    private static bool Outdated => VersionChecker.UpdateAvailable;
     
     public static void CreateMenu(GameMenu menu)
     {
@@ -85,8 +85,6 @@ public static class ModMenu
     private static void OpenGithub()
     {
         Application.OpenURL(
-            url: Outdated
-                ? $"https://github.com/SliceCraft/MiSideSpeedrunMod/releases/tag/{VersionText.NewestVersion}"
-                : "https://github.com/SliceCraft/MiSideSpeedrunMod");
+            url: VersionChecker.UpdateAvailable ? VersionChecker.DownloadUrl : VersionChecker.RepoUrl);
     }
 }
