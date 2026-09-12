@@ -8,13 +8,11 @@ internal static class VersionText
     // I know this is a bad way of adding the text, too bad
     private static float _timeUntilShow = 7f;
     private static bool _isShowing;
-    internal static string NewestVersion { get; set; }
 
     internal static void Start()
     {
         _timeUntilShow = 7f;
         _isShowing = false;
-        // Test();
     }
 
     internal static void Update()
@@ -36,18 +34,18 @@ internal static class VersionText
         speedrunVersionText.name = "SpeedrunModVersionText";
         
         Vector3 pos = speedrunVersionText.transform.position;
-        pos.y += 0.006f;
+        pos.y += 0.0085f;
         speedrunVersionText.transform.position = pos;
-            
+
         Text text = speedrunVersionText.GetComponent<Text>();
-        if (!MyPluginInfo.PLUGIN_VERSION.Equals(NewestVersion) && NewestVersion != null)
+        if (VersionChecker.UpdateAvailable)
         {
-            text.text = $"Speedrun Mod V{MyPluginInfo.PLUGIN_VERSION} : Version outdated, newest version is V{NewestVersion}";
+            text.text = $"Speedrun Mod V{VersionChecker.CurrentVersion}, latest V{VersionChecker.LatestVersion}";
             text.resizeTextForBestFit = true;
         }
         else
         {
-            text.text = $"Speedrun Mod : V{MyPluginInfo.PLUGIN_VERSION}";
+            text.text = $"Speedrun Mod V{VersionChecker.CurrentVersion}";
         }
 
         Localization_UIText uiText = speedrunVersionText.GetComponent<Localization_UIText>();
