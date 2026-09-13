@@ -9,6 +9,8 @@ internal static class RapidFireInputs
     internal const int MaxHps = 70;
     internal const float MinIntervalSeconds = 1f / MaxHps;
 
+    private static int _latchFrame = int.MinValue;
+    private static readonly Dictionary<KeyCode, bool> DownThisFrame = new();
     private static readonly Dictionary<KeyCode, RapidFireInputsKeyState> States = new();
 
     internal static bool Process(KeyCode key, bool realDown)
@@ -18,17 +20,21 @@ internal static class RapidFireInputs
             return realDown;
         }
 
-        var now = Time.realtimeSinceStartup;
         var frame = Time.frameCount;
-        var state = GetState(key);
-
-        // GetKeyDown stays true for every poll this Unity frame. Latch once.
-        if (state.Frame == frame)
+        if (_latchFrame != frame)
         {
-            return state.DownThisFrame;
+            _latchFrame = frame;
+            DownThisFrame.Clear();
         }
 
-        state.Frame = frame;
+        // GetKeyDown stays true for every poll this Unity frame. Latch once.
+        if (DownThisFrame.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        var now = Time.realtimeSinceStartup;
+        var state = GetState(key);
 
         if (realDown)
         {
@@ -50,7 +56,7 @@ internal static class RapidFireInputs
             state.RecordHit(now);
         }
 
-        state.DownThisFrame = emit;
+        DownThisFrame[key] = emit;
         return emit;
     }
 
@@ -82,5 +88,35 @@ internal static class RapidFireInputs
         }
 
         return state;
+    }
+
+    private sealed class RapidFireInputsKeyState
+    {
+        private const float HpsWindowSeconds = 1f;
+
+        internal float NextEmitAt;
+        internal int FollowUpsLeft;
+        private readonly Queue<float> _hits = new();
+
+        internal void RecordHit(float now)
+        {
+            _hits.Enqueue(now);
+            Prune(now);
+        }
+
+        internal int CountHits(float now)
+        {
+            Prune(now);
+            return _hits.Count;
+        }
+
+        private void Prune(float now)
+        {
+            var cutoff = now - HpsWindowSeconds;
+            while (_hits.Count > 0 && _hits.Peek() < cutoff)
+            {
+                _hits.Dequeue();
+            }
+        }
     }
 }
