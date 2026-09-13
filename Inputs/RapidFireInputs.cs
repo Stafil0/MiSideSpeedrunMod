@@ -9,65 +9,54 @@ internal static class RapidFireInputs
     internal const int MaxHps = 70;
     internal const float MinIntervalSeconds = 1f / MaxHps;
 
-    private const float HpsWindowSeconds = 1f;
+    private static readonly Dictionary<KeyCode, RapidFireInputsKeyState> States = new();
 
-    private static readonly Dictionary<KeyCode, KeyState> States = new();
-
-    internal static bool Process(KeyCode key, bool originalDown)
+    internal static bool Process(KeyCode key, bool realDown)
     {
-        if (!RapidFireConfig.IsTracked(key))
+        if (!RapidFireInputsConfig.IsTracked(key))
         {
-            return originalDown;
+            return realDown;
         }
 
         var now = Time.realtimeSinceStartup;
         var frame = Time.frameCount;
         var state = GetState(key);
 
-        if (state.LastFrame == frame)
+        // GetKeyDown stays true for every poll this Unity frame. Latch once.
+        if (state.Frame == frame)
         {
-            return state.CachedDown;
+            return state.DownThisFrame;
         }
 
-        state.LastFrame = frame;
+        state.Frame = frame;
 
-        if (originalDown)
+        if (realDown)
         {
-            // ponytail: refill to N, don't stack; a >70Hz real stream would otherwise
+            // ponytail: refill FollowUpsLeft, don't stack; a >70Hz real stream would otherwise
             // queue a post-mash turbo tail. Raise this cap if testers want stacked bursts.
-            state.Pending = RapidFireConfig.GetSyntheticsPerPress();
+            state.FollowUpsLeft = RapidFireInputsConfig.GetFollowUps();
         }
 
         var emit = false;
-        if (now >= state.NextAllowed && (originalDown || state.Pending > 0))
+        if (now >= state.NextEmitAt && (realDown || state.FollowUpsLeft > 0))
         {
             emit = true;
-            if (!originalDown)
+            if (!realDown)
             {
-                state.Pending--;
+                state.FollowUpsLeft--;
             }
 
-            state.NextAllowed = now + MinIntervalSeconds;
+            state.NextEmitAt = now + MinIntervalSeconds;
             state.RecordHit(now);
         }
 
-        state.CachedDown = emit;
+        state.DownThisFrame = emit;
         return emit;
-    }
-
-    internal static bool ProcessMouseButton(int button, bool originalDown)
-    {
-        if (button < 0 || button > 6)
-        {
-            return originalDown;
-        }
-
-        return Process(KeyCode.Mouse0 + button, originalDown);
     }
 
     internal static IEnumerable<(KeyCode key, int hps)> GetActiveHps(float now)
     {
-        foreach (var key in RapidFireConfig.GetTrackedKeys())
+        foreach (var key in RapidFireInputsConfig.GetTrackedKeys())
         {
             if (!States.TryGetValue(key, out var state))
             {
@@ -75,7 +64,7 @@ internal static class RapidFireInputs
             }
 
             var hits = state.CountHits(now);
-            if (hits == 0 && state.Pending <= 0)
+            if (hits == 0 && state.FollowUpsLeft <= 0)
             {
                 continue;
             }
@@ -84,44 +73,14 @@ internal static class RapidFireInputs
         }
     }
 
-    private static KeyState GetState(KeyCode key)
+    private static RapidFireInputsKeyState GetState(KeyCode key)
     {
         if (!States.TryGetValue(key, out var state))
         {
-            state = new KeyState();
+            state = new RapidFireInputsKeyState();
             States[key] = state;
         }
 
         return state;
-    }
-
-    private sealed class KeyState
-    {
-        internal int LastFrame = int.MinValue;
-        internal bool CachedDown;
-        internal float NextAllowed;
-        internal int Pending;
-        private readonly Queue<float> _hits = new();
-
-        internal void RecordHit(float now)
-        {
-            _hits.Enqueue(now);
-            Prune(now);
-        }
-
-        internal int CountHits(float now)
-        {
-            Prune(now);
-            return _hits.Count;
-        }
-
-        private void Prune(float now)
-        {
-            var cutoff = now - HpsWindowSeconds;
-            while (_hits.Count > 0 && _hits.Peek() < cutoff)
-            {
-                _hits.Dequeue();
-            }
-        }
     }
 }
