@@ -2,16 +2,15 @@ using System;
 using System.Linq;
 using SpeedrunMod.Configs;
 using SpeedrunMod.Overlay.Snapshots;
-using SpeedrunMod.Patches.ClickAmplifier;
 using UnityEngine;
 
-namespace SpeedrunMod.Overlay.Modules.ClickAmplifier;
+namespace SpeedrunMod.Overlay.Modules;
 
-internal sealed class ClickAmplifierOverlayModule : IOverlayModule
+internal sealed class RapidFireOverlayModule : IOverlayModule
 {
-    internal static readonly ClickAmplifierOverlayModule Instance = new();
+    internal static readonly RapidFireOverlayModule Instance = new();
 
-    public string Name => "Click Amplifier";
+    public string Name => "Rapid Fire";
 
     public string GroupKey => "Core";
 
@@ -23,7 +22,7 @@ internal sealed class ClickAmplifierOverlayModule : IOverlayModule
 
     public IOverlaySnapshot Update()
     {
-        var lines = ClickAmplifierPatch.GetActiveHps(Time.realtimeSinceStartup)
+        var lines = RapidFire.GetActiveHps(Time.realtimeSinceStartup)
             .Select(row => $"{row.key}: {row.hps} HPS")
             .ToArray();
 

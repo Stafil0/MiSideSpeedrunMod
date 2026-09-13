@@ -1,68 +1,25 @@
 using System.Collections.Generic;
-using HarmonyLib;
 using SpeedrunMod.Configs;
 using UnityEngine;
 
-namespace SpeedrunMod.Patches.ClickAmplifier;
+namespace SpeedrunMod;
 
-[HarmonyPatch]
-internal static class ClickAmplifierPatch
+internal static class RapidFire
 {
+    internal const int MaxHps = 70;
+    internal const float MinIntervalSeconds = 1f / MaxHps;
+
     private const float HpsWindowSeconds = 1f;
 
     private static readonly Dictionary<KeyCode, KeyState> States = new();
 
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(UnityEngine.Input), nameof(UnityEngine.Input.GetKeyDown), typeof(KeyCode))]
-    private static void GetKeyDownPostfix(KeyCode key, ref bool __result)
+    internal static bool Process(KeyCode key, bool originalDown)
     {
-        if (!ClickAmplifierConfig.IsTracked(key))
+        if (!RapidFireConfig.IsTracked(key))
         {
-            return;
+            return originalDown;
         }
 
-        __result = Process(key, __result);
-    }
-
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(UnityEngine.Input), nameof(UnityEngine.Input.GetMouseButtonDown), typeof(int))]
-    private static void GetMouseButtonDownPostfix(int button, ref bool __result)
-    {
-        if (button < 0 || button > 6)
-        {
-            return;
-        }
-
-        var key = KeyCode.Mouse0 + button;
-        if (!ClickAmplifierConfig.IsTracked(key))
-        {
-            return;
-        }
-
-        __result = Process(key, __result);
-    }
-
-    internal static IEnumerable<(KeyCode key, int hps)> GetActiveHps(float now)
-    {
-        foreach (var key in ClickAmplifierConfig.GetTrackedKeys())
-        {
-            if (!States.TryGetValue(key, out var state))
-            {
-                continue;
-            }
-
-            var hits = state.CountHits(now);
-            if (hits == 0 && state.Pending <= 0)
-            {
-                continue;
-            }
-
-            yield return (key, hits);
-        }
-    }
-
-    private static bool Process(KeyCode key, bool originalDown)
-    {
         var now = Time.realtimeSinceStartup;
         var frame = Time.frameCount;
         var state = GetState(key);
@@ -78,7 +35,7 @@ internal static class ClickAmplifierPatch
         {
             // ponytail: refill to N, don't stack; a >70Hz real stream would otherwise
             // queue a post-mash turbo tail. Raise this cap if testers want stacked bursts.
-            state.Pending = ClickAmplifierConfig.GetSyntheticsPerPress();
+            state.Pending = RapidFireConfig.GetSyntheticsPerPress();
         }
 
         var emit = false;
@@ -90,12 +47,41 @@ internal static class ClickAmplifierPatch
                 state.Pending--;
             }
 
-            state.NextAllowed = now + ClickAmplifierConfig.MinIntervalSeconds;
+            state.NextAllowed = now + MinIntervalSeconds;
             state.RecordHit(now);
         }
 
         state.CachedDown = emit;
         return emit;
+    }
+
+    internal static bool ProcessMouseButton(int button, bool originalDown)
+    {
+        if (button < 0 || button > 6)
+        {
+            return originalDown;
+        }
+
+        return Process(KeyCode.Mouse0 + button, originalDown);
+    }
+
+    internal static IEnumerable<(KeyCode key, int hps)> GetActiveHps(float now)
+    {
+        foreach (var key in RapidFireConfig.GetTrackedKeys())
+        {
+            if (!States.TryGetValue(key, out var state))
+            {
+                continue;
+            }
+
+            var hits = state.CountHits(now);
+            if (hits == 0 && state.Pending <= 0)
+            {
+                continue;
+            }
+
+            yield return (key, hits);
+        }
     }
 
     private static KeyState GetState(KeyCode key)

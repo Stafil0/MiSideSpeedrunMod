@@ -5,11 +5,8 @@ using UnityEngine;
 
 namespace SpeedrunMod.Configs;
 
-internal static class ClickAmplifierConfig
+internal static class RapidFireConfig
 {
-    internal const int MaxHps = 70;
-    internal const float MinIntervalSeconds = 1f / MaxHps;
-
     private const string DefaultTrackedKeys = "Space,E,Mouse0";
 
     internal static ConfigEntry<int> SyntheticsPerPress;
@@ -22,13 +19,13 @@ internal static class ClickAmplifierConfig
     internal static void Initialize(ConfigFile configFile)
     {
         SyntheticsPerPress = configFile.Bind(
-            "ClickAmplifier",
+            "RapidFire",
             "SyntheticsPerPress",
             3,
             "Synthetic follow-up edge-presses scheduled after each accepted real press of a tracked key. Developer tuning only; not shown in the in-game menu.");
 
         TrackedKeys = configFile.Bind(
-            "ClickAmplifier",
+            "RapidFire",
             "TrackedKeys",
             DefaultTrackedKeys,
             "Comma-separated Unity KeyCode names to amplify and cap (e.g. Space,E,Mouse0). Developer tuning only; not shown in the in-game menu.");
