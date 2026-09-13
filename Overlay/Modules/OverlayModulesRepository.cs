@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Collections.Generic;
+using SpeedrunMod.Overlay.Modules.ClickAmplifier;
 using SpeedrunMod.Overlay.Modules.Display;
 using SpeedrunMod.Overlay.Modules.Movement;
 using SpeedrunMod.Overlay.Modules.Persistent;
@@ -21,6 +22,7 @@ internal class OverlayModulesRepository
         [
             MovementOverlayModule.Instance,
             DisplayOverlayModule.Instance,
+            ClickAmplifierOverlayModule.Instance,
             RefreshRateWarningOverlayModule.Instance
         ];
 

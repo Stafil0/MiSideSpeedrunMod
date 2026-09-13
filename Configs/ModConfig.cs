@@ -25,5 +25,6 @@ internal static class ModConfig
         RefreshRateConfig.Initialize(configFile);
         OverlayConfig.Initialize(configFile);
         SoftlockConfig.Initialize(configFile);
+        ClickAmplifierConfig.Initialize(configFile);
     }
 }
