@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using SpeedrunMod.Configs;
 using UnityEngine;
 
-namespace SpeedrunMod;
+namespace SpeedrunMod.Inputs;
 
-internal static class RapidFire
+internal static class RapidFireInputs
 {
     internal const int MaxHps = 70;
     internal const float MinIntervalSeconds = 1f / MaxHps;

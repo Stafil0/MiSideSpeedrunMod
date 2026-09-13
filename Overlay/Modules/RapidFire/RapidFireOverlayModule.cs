@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using SpeedrunMod.Configs;
+using SpeedrunMod.Inputs;
 using SpeedrunMod.Overlay.Snapshots;
 using UnityEngine;
 
@@ -22,7 +23,7 @@ internal sealed class RapidFireOverlayModule : IOverlayModule
 
     public IOverlaySnapshot Update()
     {
-        var lines = RapidFire.GetActiveHps(Time.realtimeSinceStartup)
+        var lines = RapidFireInputs.GetActiveHps(Time.realtimeSinceStartup)
             .Select(row => $"{row.key}: {row.hps} HPS")
             .ToArray();
 

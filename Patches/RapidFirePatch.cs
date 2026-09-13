@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SpeedrunMod.Inputs;
 using UnityEngine;
 
 namespace SpeedrunMod.Patches;
@@ -10,13 +11,13 @@ internal static class RapidFirePatch
     [HarmonyPatch(typeof(UnityEngine.Input), nameof(UnityEngine.Input.GetKeyDown), typeof(KeyCode))]
     private static void GetKeyDownPostfix(KeyCode key, ref bool __result)
     {
-        __result = RapidFire.Process(key, __result);
+        __result = RapidFireInputs.Process(key, __result);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(UnityEngine.Input), nameof(UnityEngine.Input.GetMouseButtonDown), typeof(int))]
     private static void GetMouseButtonDownPostfix(int button, ref bool __result)
     {
-        __result = RapidFire.ProcessMouseButton(button, __result);
+        __result = RapidFireInputs.ProcessMouseButton(button, __result);
     }
 }
