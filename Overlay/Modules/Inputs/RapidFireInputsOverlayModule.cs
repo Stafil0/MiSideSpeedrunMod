@@ -23,6 +23,11 @@ internal sealed class RapidFireInputsOverlayModule : IOverlayModule
 
     public IOverlaySnapshot Update()
     {
+        if (!RapidFireInputsConfig.IsEnabled())
+        {
+            return EmptyOverlaySnapshot.Instance;
+        }
+
         var text = new StringBuilder();
         foreach (var (id, realHps, syntheticHps) in RapidFireInputs.GetHps(Time.realtimeSinceStartup))
         {

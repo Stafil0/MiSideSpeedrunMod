@@ -9,6 +9,7 @@ internal static class RapidFireInputsConfig
 {
     private const string DefaultTrackedKeys = "Space,E,Q";
 
+    internal static ConfigEntry<bool> Enabled;
     internal static ConfigEntry<int> SyntheticsPerPress;
     internal static ConfigEntry<string> TrackedKeys;
 
@@ -17,6 +18,12 @@ internal static class RapidFireInputsConfig
 
     internal static void Initialize(ConfigFile configFile)
     {
+        Enabled = configFile.Bind(
+            "RapidFireInputs",
+            "Enabled",
+            true,
+            "Rapid Fire on/off (menu: RAPID FIRE).");
+
         SyntheticsPerPress = configFile.Bind(
             "RapidFireInputs",
             "SyntheticsPerPress",
@@ -28,6 +35,11 @@ internal static class RapidFireInputsConfig
             "TrackedKeys",
             DefaultTrackedKeys,
             "Comma-separated ids to amplify inside allowed Updates (KeyCode names). Interactive follows Space/E; MouseClick follows Mouse0. Developer tuning only; not shown in the in-game menu.");
+    }
+
+    internal static bool IsEnabled()
+    {
+        return Enabled?.Value ?? true;
     }
 
     internal static int GetSyntheticsPerPress()

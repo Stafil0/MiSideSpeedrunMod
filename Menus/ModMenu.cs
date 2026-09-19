@@ -69,6 +69,15 @@ public static class ModMenu
             .SetNextLocation(skipsSettingsMenu)
             .Build();
 
+        GameMenu rapidFireSettingsMenu = RapidFireSettingsMenu.CreateMenu(menu);
+
+        new MenuOptionFactory()
+            .SetName("RAPID FIRE")
+            .SetParent(menu)
+            .PlaceOptionBefore(menu.MenuOptions.Count - 1)
+            .SetNextLocation(rapidFireSettingsMenu)
+            .Build();
+
         GameMenu softlocksSettingsMenu = SoftlocksSettingsMenu.CreateMenu(menu);
 
         new MenuOptionFactory()
