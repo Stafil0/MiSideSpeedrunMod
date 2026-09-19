@@ -9,17 +9,17 @@ internal static class RapidFireInputsConfig
 {
     private const string DefaultTrackedKeys = "Space,E,Q";
 
-    internal static ConfigEntry<int> Synthetics;
+    internal static ConfigEntry<int> SyntheticsPerPress;
     internal static ConfigEntry<string> TrackedKeys;
 
     private static string _parsedRaw;
-    private static string[] _tracked = [];
+    private static HashSet<string> _tracked = new(StringComparer.OrdinalIgnoreCase);
 
     internal static void Initialize(ConfigFile configFile)
     {
-        Synthetics = configFile.Bind(
+        SyntheticsPerPress = configFile.Bind(
             "RapidFireInputs",
-            "Synthetics",
+            "SyntheticsPerPress",
             3,
             "Extra GetKeyDown edges queued after each real press of a tracked key. Developer tuning only; not shown in the in-game menu.");
 
@@ -30,9 +30,9 @@ internal static class RapidFireInputsConfig
             "Comma-separated ids to amplify inside allowed Updates (KeyCode names). Interactive follows Space/E; MouseClick follows Mouse0. Developer tuning only; not shown in the in-game menu.");
     }
 
-    internal static int GetSynthetics()
+    internal static int GetSyntheticsPerPress()
     {
-        return Math.Max(0, Synthetics.Value);
+        return Math.Max(0, SyntheticsPerPress.Value);
     }
 
     internal static bool IsTracked(string id)
@@ -43,8 +43,8 @@ internal static class RapidFireInputsConfig
         }
 
         EnsureParsed();
-        
-        if (ContainsTracked(id))
+
+        if (_tracked.Contains(id))
         {
             return true;
         }
@@ -52,12 +52,12 @@ internal static class RapidFireInputsConfig
         // InputManager axes used by interact / click-to-advance, bound to tracked keys.
         if (id.Equals("Interactive", StringComparison.OrdinalIgnoreCase))
         {
-            return ContainsTracked(nameof(KeyCode.Space)) || ContainsTracked(nameof(KeyCode.E));
+            return _tracked.Contains(nameof(KeyCode.Space)) || _tracked.Contains(nameof(KeyCode.E));
         }
 
         if (id.Equals("MouseClick", StringComparison.OrdinalIgnoreCase))
         {
-            return ContainsTracked(nameof(KeyCode.Mouse0));
+            return _tracked.Contains(nameof(KeyCode.Mouse0));
         }
 
         return false;
@@ -72,7 +72,7 @@ internal static class RapidFireInputsConfig
         }
 
         _parsedRaw = raw;
-        var ids = new List<string>();
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var part in raw.Split(','))
         {
             var name = part.Trim();
@@ -86,40 +86,9 @@ internal static class RapidFireInputsConfig
                 name = key.ToString();
             }
 
-            if (ContainsIgnoreCase(ids, name))
-            {
-                continue;
-            }
-
             ids.Add(name);
         }
 
-        _tracked = ids.ToArray();
-    }
-
-    private static bool ContainsTracked(string id)
-    {
-        foreach (var tracked in _tracked)
-        {
-            if (tracked.Equals(id, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ContainsIgnoreCase(List<string> ids, string name)
-    {
-        foreach (var id in ids)
-        {
-            if (id.Equals(name, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        _tracked = ids;
     }
 }

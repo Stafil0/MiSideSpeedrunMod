@@ -24,14 +24,14 @@ internal sealed class RapidFireInputsOverlayModule : IOverlayModule
     public IOverlaySnapshot Update()
     {
         var text = new StringBuilder();
-        foreach (var (id, realHps, syntheticHps) in RapidFireInputs.GetActiveHps(Time.realtimeSinceStartup))
+        foreach (var (id, realHps, syntheticHps) in RapidFireInputs.GetHps(Time.realtimeSinceStartup))
         {
             text.Append(id)
                 .Append(": ")
                 .Append(realHps)
-                .Append(" real HPS / ")
+                .Append(" rHPS / ")
                 .Append(syntheticHps)
-                .Append(" synthetic HPS")
+                .Append(" sHPS")
                 .AppendLine();
         }
 

@@ -44,11 +44,11 @@ internal static class RapidFireInputs
         }
 
         var emit = false;
-        if (state.CanEmit(now) && (keyDown || state.CountPendingSynthetics(now) > 0))
+        if (state.CanEmit(now) && (keyDown || state.CountSyntheticsLeft(now) > 0))
         {
             emit = true;
             state.RecordHit(now, synthetic: !keyDown);
-            if (state.CountPendingSynthetics(now) == 0)
+            if (state.CountSyntheticsLeft(now) == 0)
             {
                 state.LastPressAt = float.NaN;
             }
@@ -58,18 +58,11 @@ internal static class RapidFireInputs
         return emit;
     }
 
-    internal static IEnumerable<(string id, int realHps, int syntheticHps)> GetActiveHps(float now)
+    internal static IEnumerable<(string id, int realHps, int syntheticHps)> GetHps(float now)
     {
         foreach (var pair in States)
         {
-            var real = pair.Value.CountRealHits(now);
-            var synthetic = pair.Value.CountSyntheticHits(now);
-            if (real == 0 && synthetic == 0 && pair.Value.CountPendingSynthetics(now) <= 0)
-            {
-                continue;
-            }
-
-            yield return (pair.Key, real, synthetic);
+            yield return (pair.Key, pair.Value.CountRealHps(now), pair.Value.CountSyntheticHps(now));
         }
     }
 
@@ -104,17 +97,17 @@ internal static class RapidFireInputs
             Prune(now);
         }
 
-        internal int CountRealHits(float now)
+        internal int CountRealHps(float now)
         {
-            return CountHits(now, synthetic: false);
+            return CountHps(now, synthetic: false);
         }
 
-        internal int CountSyntheticHits(float now)
+        internal int CountSyntheticHps(float now)
         {
-            return CountHits(now, synthetic: true);
+            return CountHps(now, synthetic: true);
         }
 
-        internal int CountPendingSynthetics(float now)
+        internal int CountSyntheticsLeft(float now)
         {
             if (float.IsNaN(LastPressAt))
             {
@@ -131,10 +124,10 @@ internal static class RapidFireInputs
                 }
             }
 
-            return Math.Max(0, RapidFireInputsConfig.GetSynthetics() - emitted);
+            return Math.Max(0, RapidFireInputsConfig.GetSyntheticsPerPress() - emitted);
         }
 
-        private int CountHits(float now, bool synthetic)
+        private int CountHps(float now, bool synthetic)
         {
             Prune(now);
             var n = 0;
