@@ -19,7 +19,7 @@ internal static class RapidFireInputs
 
     internal static bool Process(string id, bool keyDown)
     {
-        if (!RapidFireInputsConfig.IsTracked(id))
+        if (!RapidFireInputsConfig.IsEnabled() || !RapidFireInputsConfig.IsTracked(id))
         {
             return keyDown;
         }
