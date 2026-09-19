@@ -7,19 +7,19 @@ namespace SpeedrunMod.Configs;
 
 internal static class RapidFireInputsConfig
 {
-    private const string DefaultTrackedKeys = "Space,E";
+    private const string DefaultTrackedKeys = "Space,E,Q";
 
-    internal static ConfigEntry<int> FollowUps;
+    internal static ConfigEntry<int> Synthetics;
     internal static ConfigEntry<string> TrackedKeys;
 
     private static string _parsedRaw;
-    private static KeyCode[] _tracked = [];
+    private static string[] _tracked = [];
 
     internal static void Initialize(ConfigFile configFile)
     {
-        FollowUps = configFile.Bind(
+        Synthetics = configFile.Bind(
             "RapidFireInputs",
-            "FollowUps",
+            "Synthetics",
             3,
             "Extra GetKeyDown edges queued after each real press of a tracked key. Developer tuning only; not shown in the in-game menu.");
 
@@ -27,32 +27,40 @@ internal static class RapidFireInputsConfig
             "RapidFireInputs",
             "TrackedKeys",
             DefaultTrackedKeys,
-            "Comma-separated Unity KeyCode names to amplify and cap (e.g. Space,E). Keyboard only. Developer tuning only; not shown in the in-game menu.");
+            "Comma-separated ids to amplify inside allowed Updates (KeyCode names). Interactive follows Space/E; MouseClick follows Mouse0. Developer tuning only; not shown in the in-game menu.");
     }
 
-    internal static int GetFollowUps()
+    internal static int GetSynthetics()
     {
-        return Math.Max(0, FollowUps.Value);
+        return Math.Max(0, Synthetics.Value);
     }
 
-    internal static bool IsTracked(KeyCode key)
+    internal static bool IsTracked(string id)
     {
-        EnsureParsed();
-        foreach (var tracked in _tracked)
+        if (string.IsNullOrEmpty(id))
         {
-            if (tracked == key)
-            {
-                return true;
-            }
+            return false;
+        }
+
+        EnsureParsed();
+        
+        if (ContainsTracked(id))
+        {
+            return true;
+        }
+
+        // InputManager axes used by interact / click-to-advance, bound to tracked keys.
+        if (id.Equals("Interactive", StringComparison.OrdinalIgnoreCase))
+        {
+            return ContainsTracked(nameof(KeyCode.Space)) || ContainsTracked(nameof(KeyCode.E));
+        }
+
+        if (id.Equals("MouseClick", StringComparison.OrdinalIgnoreCase))
+        {
+            return ContainsTracked(nameof(KeyCode.Mouse0));
         }
 
         return false;
-    }
-
-    internal static KeyCode[] GetTrackedKeys()
-    {
-        EnsureParsed();
-        return _tracked;
     }
 
     private static void EnsureParsed()
@@ -64,7 +72,7 @@ internal static class RapidFireInputsConfig
         }
 
         _parsedRaw = raw;
-        var keys = new List<KeyCode>();
+        var ids = new List<string>();
         foreach (var part in raw.Split(','))
         {
             var name = part.Trim();
@@ -73,19 +81,45 @@ internal static class RapidFireInputsConfig
                 continue;
             }
 
-            if (!Enum.TryParse(name, true, out KeyCode key) || key == KeyCode.None || IsMouse(key) || keys.Contains(key))
+            if (Enum.TryParse(name, true, out KeyCode key) && key != KeyCode.None)
+            {
+                name = key.ToString();
+            }
+
+            if (ContainsIgnoreCase(ids, name))
             {
                 continue;
             }
 
-            keys.Add(key);
+            ids.Add(name);
         }
 
-        _tracked = keys.ToArray();
+        _tracked = ids.ToArray();
     }
 
-    private static bool IsMouse(KeyCode key)
+    private static bool ContainsTracked(string id)
     {
-        return key is >= KeyCode.Mouse0 and <= KeyCode.Mouse6;
+        foreach (var tracked in _tracked)
+        {
+            if (tracked.Equals(id, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsIgnoreCase(List<string> ids, string name)
+    {
+        foreach (var id in ids)
+        {
+            if (id.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SpeedrunMod.Configs;
 using UnityEngine;
@@ -9,113 +10,157 @@ internal static class RapidFireInputs
     internal const int MaxHps = 70;
     internal const float MinIntervalSeconds = 1f / MaxHps;
 
-    private static int _latchFrame = int.MinValue;
-    private static readonly Dictionary<KeyCode, bool> DownThisFrame = new();
-    private static readonly Dictionary<KeyCode, RapidFireInputsKeyState> States = new();
+    private static readonly Dictionary<string, KeyState> States = new();
 
-    internal static bool Process(KeyCode key, bool realDown)
+    internal static bool Process(KeyCode key, bool keyDown)
     {
-        if (!RapidFireInputsConfig.IsTracked(key))
-        {
-            return realDown;
-        }
+        return Process(key.ToString(), keyDown);
+    }
 
-        var frame = Time.frameCount;
-        if (_latchFrame != frame)
+    internal static bool Process(string id, bool keyDown)
+    {
+        if (!RapidFireInputsConfig.IsTracked(id))
         {
-            _latchFrame = frame;
-            DownThisFrame.Clear();
-        }
-
-        // GetKeyDown stays true for every poll this Unity frame. Latch once.
-        if (DownThisFrame.TryGetValue(key, out var cached))
-        {
-            return cached;
+            return keyDown;
         }
 
         var now = Time.realtimeSinceStartup;
-        var state = GetState(key);
+        var frame = Time.frameCount;
+        var state = GetState(id);
 
-        if (realDown)
+        // GetKeyDown stays true for every poll this Unity frame. Latch once.
+        if (state.Frame == frame)
         {
-            // ponytail: refill FollowUpsLeft, don't stack; a >70Hz real stream would otherwise
+            return state.Down;
+        }
+
+        state.Frame = frame;
+
+        if (keyDown)
+        {
+            // Reset LastPressAt, don't stack; a >70Hz real stream would otherwise
             // queue a post-mash turbo tail. Raise this cap if testers want stacked bursts.
-            state.FollowUpsLeft = RapidFireInputsConfig.GetFollowUps();
+            state.LastPressAt = now;
         }
 
         var emit = false;
-        if (now >= state.NextEmitAt && (realDown || state.FollowUpsLeft > 0))
+        if (state.CanEmit(now) && (keyDown || state.CountPendingSynthetics(now) > 0))
         {
             emit = true;
-            if (!realDown)
+            state.RecordHit(now, synthetic: !keyDown);
+            if (state.CountPendingSynthetics(now) == 0)
             {
-                state.FollowUpsLeft--;
+                state.LastPressAt = float.NaN;
             }
-
-            state.NextEmitAt = now + MinIntervalSeconds;
-            state.RecordHit(now);
         }
 
-        DownThisFrame[key] = emit;
+        state.Down = emit;
         return emit;
     }
 
-    internal static IEnumerable<(KeyCode key, int hps)> GetActiveHps(float now)
+    internal static IEnumerable<(string id, int realHps, int syntheticHps)> GetActiveHps(float now)
     {
-        foreach (var key in RapidFireInputsConfig.GetTrackedKeys())
+        foreach (var pair in States)
         {
-            if (!States.TryGetValue(key, out var state))
+            var real = pair.Value.CountRealHits(now);
+            var synthetic = pair.Value.CountSyntheticHits(now);
+            if (real == 0 && synthetic == 0 && pair.Value.CountPendingSynthetics(now) <= 0)
             {
                 continue;
             }
 
-            var hits = state.CountHits(now);
-            if (hits == 0 && state.FollowUpsLeft <= 0)
-            {
-                continue;
-            }
-
-            yield return (key, hits);
+            yield return (pair.Key, real, synthetic);
         }
     }
 
-    private static RapidFireInputsKeyState GetState(KeyCode key)
+    private static KeyState GetState(string id)
     {
-        if (!States.TryGetValue(key, out var state))
+        if (!States.TryGetValue(id, out var state))
         {
-            state = new RapidFireInputsKeyState();
-            States[key] = state;
+            state = new KeyState();
+            States[id] = state;
         }
 
         return state;
     }
 
-    private sealed class RapidFireInputsKeyState
+    private sealed class KeyState
     {
         private const float HpsWindowSeconds = 1f;
 
-        internal float NextEmitAt;
-        internal int FollowUpsLeft;
-        private readonly Queue<float> _hits = new();
+        internal int Frame = int.MinValue;
+        internal bool Down;
+        internal float LastPressAt = float.NaN;
+        private readonly List<(float at, bool synthetic)> _hits = new();
 
-        internal void RecordHit(float now)
+        internal bool CanEmit(float now)
         {
-            _hits.Enqueue(now);
+            return _hits.Count == 0 || now - _hits[^1].at >= MinIntervalSeconds;
+        }
+
+        internal void RecordHit(float now, bool synthetic)
+        {
+            _hits.Add((now, synthetic));
             Prune(now);
         }
 
-        internal int CountHits(float now)
+        internal int CountRealHits(float now)
+        {
+            return CountHits(now, synthetic: false);
+        }
+
+        internal int CountSyntheticHits(float now)
+        {
+            return CountHits(now, synthetic: true);
+        }
+
+        internal int CountPendingSynthetics(float now)
+        {
+            if (float.IsNaN(LastPressAt))
+            {
+                return 0;
+            }
+
+            Prune(now);
+            var emitted = 0;
+            foreach (var hit in _hits)
+            {
+                if (hit.at > LastPressAt)
+                {
+                    emitted++;
+                }
+            }
+
+            return Math.Max(0, RapidFireInputsConfig.GetSynthetics() - emitted);
+        }
+
+        private int CountHits(float now, bool synthetic)
         {
             Prune(now);
-            return _hits.Count;
+            var n = 0;
+            foreach (var hit in _hits)
+            {
+                if (hit.synthetic == synthetic)
+                {
+                    n++;
+                }
+            }
+
+            return n;
         }
 
         private void Prune(float now)
         {
             var cutoff = now - HpsWindowSeconds;
-            while (_hits.Count > 0 && _hits.Peek() < cutoff)
+            var drop = 0;
+            while (drop < _hits.Count && _hits[drop].at < cutoff)
             {
-                _hits.Dequeue();
+                drop++;
+            }
+
+            if (drop > 0)
+            {
+                _hits.RemoveRange(0, drop);
             }
         }
     }

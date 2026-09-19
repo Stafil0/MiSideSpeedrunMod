@@ -24,14 +24,15 @@ internal sealed class RapidFireInputsOverlayModule : IOverlayModule
     public IOverlaySnapshot Update()
     {
         var text = new StringBuilder();
-        foreach (var (key, hps) in RapidFireInputs.GetActiveHps(Time.realtimeSinceStartup))
+        foreach (var (id, realHps, syntheticHps) in RapidFireInputs.GetActiveHps(Time.realtimeSinceStartup))
         {
-            if (text.Length > 0)
-            {
-                text.Append('\n');
-            }
-
-            text.Append(key).Append(": ").Append(hps).Append(" HPS");
+            text.Append(id)
+                .Append(": ")
+                .Append(realHps)
+                .Append(" real HPS / ")
+                .Append(syntheticHps)
+                .Append(" synthetic HPS")
+                .AppendLine();
         }
 
         if (text.Length == 0)
