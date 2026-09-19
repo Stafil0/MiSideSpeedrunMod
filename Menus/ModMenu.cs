@@ -72,7 +72,7 @@ public static class ModMenu
         GameMenu rapidFireSettingsMenu = RapidFireSettingsMenu.CreateMenu(menu);
 
         new MenuOptionFactory()
-            .SetName("RAPID FIRE")
+            .SetName("INPUTS")
             .SetParent(menu)
             .PlaceOptionBefore(menu.MenuOptions.Count - 1)
             .SetNextLocation(rapidFireSettingsMenu)
