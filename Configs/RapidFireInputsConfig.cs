@@ -22,7 +22,7 @@ internal static class RapidFireInputsConfig
             "RapidFireInputs",
             "Enabled",
             true,
-            "Rapid Fire on/off (menu: RAPID FIRE).");
+            "Rapid Fire on/off (menu: INPUTS).");
 
         SyntheticsPerPress = configFile.Bind(
             "RapidFireInputs",

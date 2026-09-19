@@ -16,7 +16,7 @@ internal static class RapidFireSettingsMenu
     internal static GameMenu CreateMenu(GameMenu previousMenu)
     {
         GameMenu menu = new MenuFactory()
-            .SetTitle("RAPID FIRE")
+            .SetTitle("INPUTS")
             .SetBackButton(previousMenu)
             .Build();
 
