@@ -21,6 +21,7 @@ internal class OverlayModulesRepository
         [
             MovementOverlayModule.Instance,
             DisplayOverlayModule.Instance,
+            RapidFireInputsOverlayModule.Instance,
             RefreshRateWarningOverlayModule.Instance
         ];
 

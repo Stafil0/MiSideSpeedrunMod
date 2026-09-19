@@ -26,5 +26,6 @@ internal static class ModConfig
         OverlayConfig.Initialize(configFile);
         FastResetConfig.Initialize(configFile);
         SoftlockConfig.Initialize(configFile);
+        RapidFireInputsConfig.Initialize(configFile);
     }
 }
